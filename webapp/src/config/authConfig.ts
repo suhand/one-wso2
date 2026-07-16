@@ -16,15 +16,22 @@ declare global {
       // My profile page. Optional — when absent, the My page still loads
       // but the profile sections show a "not configured" state.
       ONE_WSO2_PEOPLE_BACKEND_URL?: string;
-      // Dev-only escape hatch — when true, AuthGuard treats the user as
-      // signed in without ever calling Asgardeo. For local UI iteration
-      // before a real Asgardeo app registration exists. Never set in prod.
+      // Dev-only escape hatch — when true AND the bundle is a Vite dev
+      // build, AuthGuard treats the user as signed in without ever calling
+      // Asgardeo. Ignored in production builds (see devBypassAuth below),
+      // so a stray true in a prod config.js can't disable auth.
       ONE_WSO2_DEV_BYPASS_AUTH?: boolean;
     };
   }
 }
 
-export const devBypassAuth = window.config?.ONE_WSO2_DEV_BYPASS_AUTH === true;
+// Gate on import.meta.env.DEV so this constant folds to `false` in the
+// production bundle no matter what config.js says. Vite/esbuild replaces
+// import.meta.env.DEV with a literal `false` at build time and dead-code
+// eliminates the whole branch, so ONE_WSO2_DEV_BYPASS_AUTH becomes inert
+// in shipped code even if an operator accidentally sets it to true.
+export const devBypassAuth =
+  import.meta.env.DEV && window.config?.ONE_WSO2_DEV_BYPASS_AUTH === true;
 
 function readConfig(key: keyof Window["config"], fallback = ""): string {
   const value = window.config?.[key];

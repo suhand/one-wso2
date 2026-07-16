@@ -32,16 +32,23 @@ interface DecodedToken {
   payload: Record<string, unknown>;
 }
 
+// Memo output is a discriminated union so we never call setState during
+// render — parse errors are represented as a variant instead.
+type DecodeResult =
+  | { kind: "empty" }
+  | { kind: "ok"; decoded: DecodedToken }
+  | { kind: "error"; message: string };
+
 function AuthDebugPanelInner() {
   const { isSignedIn, getIdToken } = useAsgardeo();
   const [open, setOpen] = useState(false);
   const [rawToken, setRawToken] = useState<string>("");
-  const [error, setError] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open || !isSignedIn) return;
     let cancelled = false;
-    setError(null);
+    setFetchError(null);
     getIdToken()
       .then((t) => {
         if (cancelled) return;
@@ -49,28 +56,32 @@ function AuthDebugPanelInner() {
       })
       .catch((e) => {
         if (cancelled) return;
-        setError(e instanceof Error ? e.message : String(e));
+        setFetchError(e instanceof Error ? e.message : String(e));
       });
     return () => {
       cancelled = true;
     };
   }, [open, isSignedIn, getIdToken]);
 
-  const decoded = useMemo<DecodedToken | null>(() => {
-    if (!rawToken) return null;
+  const result = useMemo<DecodeResult>(() => {
+    if (!rawToken) return { kind: "empty" };
     try {
       const parts = rawToken.split(".");
       if (parts.length < 2) throw new Error("Not a JWT (expected header.payload.signature)");
       return {
-        header: JSON.parse(b64urlDecode(parts[0])),
-        payload: JSON.parse(b64urlDecode(parts[1])),
+        kind: "ok",
+        decoded: {
+          header: JSON.parse(b64urlDecode(parts[0])),
+          payload: JSON.parse(b64urlDecode(parts[1])),
+        },
       };
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      return null;
+      return { kind: "error", message: e instanceof Error ? e.message : String(e) };
     }
   }, [rawToken]);
 
+  const decoded = result.kind === "ok" ? result.decoded : null;
+  const displayError = fetchError ?? (result.kind === "error" ? result.message : null);
   const email = decoded?.payload["email"];
   const groups = decoded?.payload["groups"];
   const hasEmail = typeof email === "string" && email.length > 0;
@@ -140,9 +151,9 @@ function AuthDebugPanelInner() {
             </Typography>
           </Section>
 
-          {error && (
+          {displayError && (
             <Section title="Error">
-              <Typography sx={{ fontSize: 12.5, color: "error.main", fontFamily: "monospace" }}>{error}</Typography>
+              <Typography sx={{ fontSize: 12.5, color: "error.main", fontFamily: "monospace" }}>{displayError}</Typography>
             </Section>
           )}
 

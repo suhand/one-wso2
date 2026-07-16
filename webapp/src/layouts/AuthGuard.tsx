@@ -1,6 +1,6 @@
 import { useAsgardeo } from "@asgardeo/react";
-import { useEffect } from "react";
-import { Outlet, useLocation } from "react-router";
+import { useEffect, useRef } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router";
 import { Box, CircularProgress } from "@wso2/oxygen-ui";
 import { devBypassAuth } from "@config/authConfig";
 
@@ -12,26 +12,35 @@ const POST_LOGIN_KEY = "one_wso2_post_login_redirect";
 export default function AuthGuard() {
   const { isSignedIn, isLoading, signIn } = useAsgardeo();
   const location = useLocation();
+  const navigate = useNavigate();
+  // Prevents a second signIn() from firing under StrictMode's double-render
+  // or on any incidental re-run of this effect before the browser has left
+  // the page. Reset only when the SDK reports the user as signed in.
+  const startedSignInRef = useRef(false);
 
   useEffect(() => {
     if (devBypassAuth) return; // dev-only: never redirect
     if (isLoading) return;
     if (!isSignedIn) {
+      if (startedSignInRef.current) return;
+      startedSignInRef.current = true;
       const target = location.pathname + location.search + location.hash;
       if (target && target !== "/") {
         sessionStorage.setItem(POST_LOGIN_KEY, target);
       }
       signIn();
-    } else {
-      const restored = sessionStorage.getItem(POST_LOGIN_KEY);
-      if (restored) {
-        sessionStorage.removeItem(POST_LOGIN_KEY);
-        if (restored !== location.pathname + location.search + location.hash) {
-          window.history.replaceState({}, "", restored);
-        }
-      }
+      return;
     }
-  }, [isLoading, isSignedIn, location, signIn]);
+    // Signed in: consume any stashed redirect and let React Router own the
+    // history stack so useNavigate()/Back behave predictably.
+    startedSignInRef.current = false;
+    const restored = sessionStorage.getItem(POST_LOGIN_KEY);
+    if (!restored) return;
+    sessionStorage.removeItem(POST_LOGIN_KEY);
+    if (restored !== location.pathname + location.search + location.hash) {
+      navigate(restored, { replace: true });
+    }
+  }, [isLoading, isSignedIn, location, signIn, navigate]);
 
   if (devBypassAuth) return <Outlet />;
 

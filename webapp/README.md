@@ -1,43 +1,97 @@
-# One WSO2 — Webapp
+# One WSO2 Webapp
 
-React 19 + Vite 7 + TypeScript port of the `prototype/index.html` mock, following the same conventions as `cs-tools/apps/customer-portal/webapp`. Same Asgardeo auth pattern (runtime `window.config`), same Oxygen-UI theme, same route-guard structure.
+Internal cross-persona portal for WSO2. React 19 + TypeScript + Vite SPA that ports `prototype/index.html` into a real webapp. Follows the same conventions as `cs-tools/apps/customer-portal/webapp` — same Asgardeo auth pattern (runtime `window.config`), same Oxygen-UI theme, same route-guard structure.
 
-## Quick start
+## Tech Stack
 
-```bash
-pnpm install
+- **Core**: [React 19](https://react.dev/)
+- **Build Tool**: [Vite](https://vitejs.dev/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **UI Library**: [Oxygen UI](https://github.com/wso2/oxygen-ui) (WSO2's MUI-based design system)
+- **Data Fetching**: [TanStack Query](https://tanstack.com/query/latest) (React Query)
+- **Authentication**: [Asgardeo](https://wso2.com/asgardeo/) via [`@asgardeo/react`](https://www.npmjs.com/package/@asgardeo/react)
+- **Routing**: [React Router](https://reactrouter.com/) v7
 
-# One-time: copy the config template
-cp public/config.js.example public/config.js
-# Then fill in the four ONE_WSO2_AUTH_* values in public/config.js
+## Getting Started
 
-pnpm dev            # → http://localhost:3000
-```
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) ≥ 20.19 (Vite 7 requires `crypto.hash`; Node 22 LTS recommended)
+- npm (bundled with Node) — pnpm/yarn also work but the checked-in lockfile is `package-lock.json`
+
+### Installation
+
+1. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+2. Copy the runtime config template:
+
+   ```bash
+   cp public/config.js.example public/config.js
+   ```
+
+3. Fill in the `ONE_WSO2_*` values in `public/config.js` (Asgardeo tenant + client ID from your Asgardeo application registration, and the people-app backend URL — see [Configuration](#configuration) below).
 
 `public/config.js` is git-ignored — never commit env-specific values. At deploy time, Choreo (or whatever hosts the static bundle) injects a fresh `config.js` per environment; the same build serves any env.
 
-## Scripts
+### Development
 
-| Command | What it does |
+```bash
+npm run dev            # → http://localhost:3000
+```
+
+### Build
+
+```bash
+npm run build          # tsc -b && vite build → dist/
+```
+
+Preview the production build:
+
+```bash
+npm run preview
+```
+
+### Lint
+
+```bash
+npm run lint
+```
+
+## Configuration
+
+Runtime config is read from `window.config` set by `public/config.js`. Build-time env vars are prefixed `ONE_WSO2_` (see `vite.config.ts`).
+
+### Runtime Config Keys (public/config.js)
+
+| Key | Description | Example |
+|---|---|---|
+| `ONE_WSO2_AUTH_BASE_URL` | Asgardeo tenant base URL | `https://api.asgardeo.io/t/wso2` |
+| `ONE_WSO2_AUTH_CLIENT_ID` | Asgardeo SPA application client ID | `<client-id>` |
+| `ONE_WSO2_AUTH_SIGN_IN_REDIRECT_URL` | Sign-in callback URL (must match Asgardeo app registration) | `http://localhost:3000` |
+| `ONE_WSO2_AUTH_SIGN_OUT_REDIRECT_URL` | Sign-out callback URL | `http://localhost:3000` |
+| `ONE_WSO2_PEOPLE_BACKEND_URL` | people-ops-suite people-app backend base URL (Choreo gateway) — powers the live My profile page | `<people-app-backend-url>` |
+| `ONE_WSO2_THEME` | Theme name (`acrylicOrange`, `acrylicPurple`, `classic`, `highContrast`) — default `acrylicOrange` (with the one-wso2 palette overlay) | `acrylicOrange` |
+| `ONE_WSO2_DEV_BYPASS_AUTH` | Dev-only escape hatch — when `true`, AuthGuard renders without ever calling Asgardeo. **Never** set in prod. | `false` |
+
+### Import Aliases
+
+Use `@`-prefixed aliases instead of relative imports beyond one level (defined in `vite.config.ts` and mirrored in `tsconfig.app.json`):
+
+| Alias | Points to |
 |---|---|
-| `pnpm dev` | Vite dev server on port 3000 |
-| `pnpm build` | TypeScript project build (`tsc -b`) then Vite production bundle → `dist/` |
-| `pnpm preview` | Serve the built `dist/` locally to verify the bundle |
-| `pnpm lint` | ESLint over `src/` |
+| `@components` | `src/components` |
+| `@config` | `src/config` |
+| `@constants` | `src/constants` |
+| `@context` | `src/context` |
+| `@features` | `src/features` |
+| `@hooks` | `src/hooks` |
+| `@layouts` | `src/layouts` |
 
-## Runtime config (window.config)
-
-Everything comes from `public/config.js` at runtime, not `.env`. Populated variables (see `public/config.js.example`):
-
-| Key | Purpose |
-|---|---|
-| `ONE_WSO2_AUTH_BASE_URL` | Asgardeo tenant URL (e.g. `https://api.asgardeo.io/t/wso2`) |
-| `ONE_WSO2_AUTH_CLIENT_ID` | Application client ID from Asgardeo |
-| `ONE_WSO2_AUTH_SIGN_IN_REDIRECT_URL` | Where Asgardeo returns after sign-in (must match app registration) |
-| `ONE_WSO2_AUTH_SIGN_OUT_REDIRECT_URL` | Where Asgardeo returns after sign-out |
-| `ONE_WSO2_THEME` | Oxygen-UI theme name — `acrylicOrange` (default), `acrylicPurple`, `classic`, `highContrast` |
-
-## Directory layout
+## Directory Layout
 
 ```
 webapp/
@@ -49,22 +103,23 @@ webapp/
 │   ├── main.tsx             → React root
 │   ├── AppWithConfig.tsx    → provider tree (Asgardeo, Router, Oxygen theme, Query)
 │   ├── App.tsx              → routes
-│   ├── config/              → runtime config resolution (authConfig, themeConfig)
+│   ├── config/              → runtime config resolution (authConfig, apiConfig, themeConfig)
 │   ├── constants/           → perspective registry (single source of truth for waffle + rail)
 │   ├── context/             → PerspectiveContext, ThemeModeContext
 │   ├── layouts/             → AuthGuard, AppLayout (shell)
 │   ├── components/          → shell chrome (TopBar, SideRail, WaffleOverlay, AskNoveraPalette)
 │   └── features/            → feature-sliced folders
 │       ├── people-ops/      → flagship perspective (hiring, candidates, performance, ops)
-│       ├── my/              → profile perspective (hero, general, personal, connected)
-│       └── service-requests/ → cross-cutting requests catalog
+│       ├── my/              → profile perspective (live data via people-app backend)
+│       ├── service-requests/→ cross-cutting requests catalog
+│       └── debug/           → dev-only AuthDebugPanel (JWT decoder)
 ├── index.html
 ├── package.json
 ├── tsconfig*.json
 └── vite.config.ts
 ```
 
-## Perspective model
+## Perspective Model
 
 The waffle switcher (top-right) is the primary persona selector. Each perspective is registered in `src/constants/perspectives.ts` with `access` and `sections`:
 
@@ -73,7 +128,7 @@ The waffle switcher (top-right) is the primary persona selector. Each perspectiv
 
 The left rail derives from the active perspective's `sections` list; each entry smoothly scrolls the canvas to a matching `id`. Change what's in the rail by editing the perspective's `sections` array — no code changes elsewhere.
 
-## Adding a new perspective
+### Adding a New Perspective
 
 1. Add an entry to `PERSPECTIVES` in `src/constants/perspectives.ts` (with `access: true`, a `path`, and its `sections`).
 2. Create `src/features/<key>/pages/<Key>Page.tsx`.
@@ -82,18 +137,30 @@ The left rail derives from the active perspective's `sections` list; each entry 
 
 The waffle and rail pick it up automatically.
 
-## Auth flow
+## Auth Flow
 
 `<AuthGuard>` wraps every route. On mount:
+
 1. If Asgardeo says signed in → render children.
 2. If not → stash the intended URL in `sessionStorage.one_wso2_post_login_redirect` and call `signIn()`. After the redirect completes, the guard restores the original URL.
 
-The token is available anywhere via `useAsgardeo().getIdToken()` — same interface as customer-portal.
+The id_token is available anywhere via `useAsgardeo().getIdToken()` — same interface as customer-portal. It's attached as `Authorization: Bearer <idToken>` on API calls; Choreo's gateway rewrites it to `x-jwt-assertion` for the backend Ballerina services.
 
-## Ask Novera palette
+For local UI iteration before a real Asgardeo app registration exists, set `ONE_WSO2_DEV_BYPASS_AUTH: true` in `public/config.js` — the guard will render every route without ever calling Asgardeo.
+
+## Auth Debug Panel
+
+In dev, a floating **🔐 auth** pill appears at the bottom-right of every authenticated page. Clicking it decodes the current `id_token` and shows its claims — useful for diagnosing why a downstream backend rejects a token (missing `email`/`groups`, wrong audience, etc.). It's stripped from production builds via `import.meta.env.DEV`.
+
+## Ask Novera Palette
 
 `⌘K` (or clicking the top-bar Ask Novera bar) opens the palette. Currently a UI-only mock — wire it to a Novera backend (or a Choreo gateway `/query` endpoint) when the integration lands.
 
-## What still uses static data
+## Live Data
 
-Every card in `features/*/constants/` holds mocked domain data ported from the prototype. Swap each constants module for a React Query hook (`useOpenRequisitions`, `useRecentJoiners`, …) once the backends exist. The tanstack/react-query provider is already wired in `AppWithConfig.tsx`.
+- **My profile** — fires `/user-info` → `/employees/{id}` + `/employees/{id}/personal-info` against `ONE_WSO2_PEOPLE_BACKEND_URL`. Contract types are mirrored from people-app in `src/features/my/api/types.ts`. When `ONE_WSO2_PEOPLE_BACKEND_URL` isn't set, the profile page shows a "not configured" banner instead of failing silently.
+- **Everything else** — every card in `features/*/constants/` still holds mocked data ported from the prototype. Swap each constants module for a React Query hook (`useOpenRequisitions`, `useRecentJoiners`, …) once the backends exist. The TanStack React Query provider is already wired in `AppWithConfig.tsx`.
+
+## Branching
+
+This webapp lives in the `wso2-open-operations/one-wso2` repo under `webapp/`. Work on a feature branch off `main` (never commit directly to `main`). Rebase on `origin/main` before opening a PR.

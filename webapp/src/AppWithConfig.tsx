@@ -7,9 +7,13 @@ import { authConfig } from "@config/authConfig";
 import { themeConfig } from "@config/themeConfig";
 import { ThemeModeProvider } from "@context/theme-mode/ThemeModeContext";
 import { PerspectiveProvider } from "@context/perspective/PerspectiveContext";
+import { HttpError } from "@features/my/api/useMeProfile";
 import App from "./App";
 
-// One shared QueryClient — retry only on transient upstream errors.
+// One shared QueryClient — retry only on transient upstream errors. All
+// HTTP failures the app throws are HttpError (see @features/my/api), so we
+// key the check off the class + .status rather than a fragile regex on the
+// message. Non-HttpError throws (e.g. network offline) also retry.
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -17,8 +21,9 @@ const queryClient = new QueryClient({
       refetchOnReconnect: false,
       refetchOnMount: false,
       retry: (failureCount, error) => {
-        const status = (error as { status?: number })?.status;
-        return failureCount < 2 && (status === 502 || status === 503);
+        if (failureCount >= 2) return false;
+        if (error instanceof HttpError) return error.status === 502 || error.status === 503;
+        return true;
       },
     },
   },
