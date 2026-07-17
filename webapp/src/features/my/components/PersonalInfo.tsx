@@ -28,11 +28,17 @@ export default function PersonalInfo({
   if (!personalInfo) {
     return (
       <Card variant="outlined" sx={{ p: 2 }}>
-        <Stack spacing={1.5}>
-          {Array.from({ length: isLoading ? 6 : 6 }).map((_, i) => (
-            <Skeleton key={i} variant="rectangular" height={38} sx={{ borderRadius: 1 }} />
-          ))}
-        </Stack>
+        {isLoading ? (
+          <Stack spacing={1.5}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} variant="rectangular" height={38} sx={{ borderRadius: 1 }} />
+            ))}
+          </Stack>
+        ) : (
+          <Typography sx={{ fontSize: 13, color: "text.secondary", py: 1 }}>
+            Personal information isn't available for your account right now.
+          </Typography>
+        )}
       </Card>
     );
   }
@@ -81,10 +87,14 @@ export default function PersonalInfo({
           />
         ))
       )}
+      {/* Editing controls are disabled until the write-side people-app
+          endpoints are wired up. Keeping them visible (rather than hidden)
+          so the UI still tells the story of what the section supports. */}
       <Button
         variant="outlined"
         size="small"
-        disabled={emergency.length >= MAX_EMERGENCY}
+        disabled
+        title="Editing coming soon"
         sx={{
           mt: 1.25,
           fontSize: 12,
@@ -105,8 +115,8 @@ export default function PersonalInfo({
         justifyContent="flex-end"
         sx={{ mt: 2.25, pt: 1.75, borderTop: 1, borderColor: "divider" }}
       >
-        <Button variant="outlined" size="small">Discard changes</Button>
-        <Button variant="contained" size="small">Save changes</Button>
+        <Button variant="outlined" size="small" disabled title="Editing coming soon">Discard changes</Button>
+        <Button variant="contained" size="small" disabled title="Editing coming soon">Save changes</Button>
       </Stack>
     </Card>
   );

@@ -7,14 +7,22 @@ import type { Employee, EmployeePersonalInfo, UserInfo } from "./types";
 // Thrown by authedGet — carries the HTTP status so retry logic (both the
 // per-query retry in useMeProfile and the global one in AppWithConfig's
 // QueryClient) can key off it without regex-parsing the message.
+//
+// The user-facing `.message` intentionally omits the raw response body —
+// backend diagnostics can leak stack traces / internal identifiers and
+// this Error surfaces via MyProfilePage's error banner (visible to the
+// signed-in user). Sanitized body is preserved on `.responseBody` for
+// controlled dev logging (see authedGet) but never in the message.
 export class HttpError extends Error {
   readonly status: number;
   readonly url: string;
+  readonly responseBody: string;
   constructor(url: string, status: number, body: string) {
-    super(`GET ${url} failed: HTTP ${status}${body ? ` — ${body.slice(0, 200)}` : ""}`);
+    super(`Request failed with HTTP ${status}`);
     this.name = "HttpError";
     this.status = status;
     this.url = url;
+    this.responseBody = body;
   }
 }
 
@@ -30,6 +38,10 @@ async function authedGet<T>(url: string, idToken: string): Promise<T> {
   });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
+    // Dev-only console log — never render `body` in the UI.
+    if (import.meta.env.DEV && body) {
+      console.warn(`[authedGet] ${url} → HTTP ${res.status}: ${body.slice(0, 400)}`);
+    }
     throw new HttpError(url, res.status, body);
   }
   return res.json() as Promise<T>;
@@ -48,31 +60,51 @@ export interface MeProfile {
 // populated when preferences.user.fetchUserProfile is true (we disable it)
 // or on the AsgardeoV2 platform (our tenant isn't). Decoding the id_token
 // via the SDK is the one path that always works.
-function useAsgardeoSub(): string | undefined {
+//
+// Returns a three-state value so the caller can distinguish loading
+// ({status: "loading"}), success ({status: "ready", sub}), and terminal
+// failure ({status: "error", message}). Callers surface the error state
+// in the UI instead of leaving the downstream query silently disabled.
+type SubState =
+  | { status: "loading" }
+  | { status: "ready"; sub: string }
+  | { status: "error"; message: string };
+
+function useAsgardeoSub(): SubState {
   const { isSignedIn, getDecodedIdToken } = useAsgardeo();
-  const [sub, setSub] = useState<string | undefined>(undefined);
+  const [state, setState] = useState<SubState>({ status: "loading" });
 
   useEffect(() => {
     if (!isSignedIn) {
-      setSub(undefined);
+      setState({ status: "loading" });
       return;
     }
     let cancelled = false;
+    setState({ status: "loading" });
     getDecodedIdToken()
       .then((token) => {
         if (cancelled) return;
         const s = (token as { sub?: string } | null | undefined)?.sub;
-        setSub(typeof s === "string" && s.length > 0 ? s : undefined);
+        if (typeof s === "string" && s.length > 0) {
+          setState({ status: "ready", sub: s });
+        } else {
+          setState({
+            status: "error",
+            message: "Signed in, but the identity token has no `sub` claim.",
+          });
+        }
       })
-      .catch(() => {
-        if (!cancelled) setSub(undefined);
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        const msg = e instanceof Error ? e.message : String(e);
+        setState({ status: "error", message: `Couldn't decode identity token: ${msg}` });
       });
     return () => {
       cancelled = true;
     };
   }, [isSignedIn, getDecodedIdToken]);
 
-  return sub;
+  return state;
 }
 
 // Two-step fetch that mirrors people-app's own me flow:
@@ -82,10 +114,12 @@ function useAsgardeoSub(): string | undefined {
 // Steps 2 and 3 run in parallel once employeeId is known.
 export function useMeProfile() {
   const { getIdToken, isSignedIn } = useAsgardeo();
-  const userSub = useAsgardeoSub();
+  const subState = useAsgardeoSub();
+  const userSub = subState.status === "ready" ? subState.sub : undefined;
   const backendConfigured = Boolean(peopleBackendUrl);
+  const identityError = subState.status === "error" ? subState.message : null;
 
-  return useQuery<MeProfile>({
+  const query = useQuery<MeProfile>({
     // userSub is part of the key so cached data is scoped per-user — no
     // brief cross-user leak on account switch in the same tab.
     queryKey: ["me-profile", userSub],
@@ -115,6 +149,30 @@ export function useMeProfile() {
       return failureCount < 1;
     },
   });
+
+  // Fold identity resolution failures into the query result so the page
+  // renders a real error (with a retry path) instead of getting stuck on
+  // the loading skeleton. Identity errors take precedence — if the JWT
+  // subject is unresolvable, the /user-info call would fail anyway.
+  //
+  // The synthetic result doesn't match React Query's discriminated union
+  // exactly (the four *Result variants have exclusive boolean flags), so
+  // we cast through unknown; the consumer only reads isError + error +
+  // isLoading, and this shape sets those consistently.
+  if (identityError && !query.isError) {
+    const synthetic = {
+      ...query,
+      isError: true,
+      isPending: false,
+      isLoading: false,
+      isSuccess: false,
+      isFetching: false,
+      status: "error" as const,
+      error: new Error(identityError),
+    };
+    return synthetic as unknown as typeof query;
+  }
+  return query;
 }
 
 export function isPeopleBackendConfigured(): boolean {

@@ -94,8 +94,8 @@ export default function OpenRequisitions() {
             <Funnel stages={r.funnel} />
           ) : (
             <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
-              <Button variant="contained" size="small">Publish</Button>
-              <Button variant="outlined" size="small">Edit draft</Button>
+              <Button variant="contained" size="small" aria-label={`Publish ${r.title}`}>Publish</Button>
+              <Button variant="outlined" size="small" aria-label={`Edit draft ${r.title}`}>Edit draft</Button>
             </Stack>
           )}
         </Box>

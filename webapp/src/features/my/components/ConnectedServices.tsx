@@ -2,14 +2,29 @@ import { Box, Button, Card, Chip, Stack, Typography } from "@wso2/oxygen-ui";
 
 // Three cards surfacing adjacent people-ops-suite services inside the
 // profile: Vehicles, Time off, Performance & growth.
+//
+// The values shown are illustrative sample data, NOT the signed-in user's
+// records — the vehicles, leave balance, and review status here are
+// placeholders until the per-service backends (people-app vehicles,
+// leave-app, performance) are wired up. The "Sample data" chip on the
+// section intro makes this explicit to the user.
 export default function ConnectedServices() {
   return (
     <>
-      <Typography sx={{ fontSize: 12.5, color: "text.secondary", mb: 1.25, lineHeight: 1.5 }}>
-        Adjacent services surfaced inside your profile — <b>people-app</b>{" "}
-        (vehicles), <b>leave-app</b>, and your performance cycle. No separate
-        portals.
-      </Typography>
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.25 }}>
+        <Typography sx={{ fontSize: 12.5, color: "text.secondary", lineHeight: 1.5, flex: 1 }}>
+          Adjacent services surfaced inside your profile — <b>people-app</b>{" "}
+          (vehicles), <b>leave-app</b>, and your performance cycle. No separate
+          portals.
+        </Typography>
+        <Chip
+          label="Sample data"
+          size="small"
+          color="warning"
+          variant="outlined"
+          sx={{ height: 22, fontSize: 10.5, fontWeight: 600, letterSpacing: "0.04em" }}
+        />
+      </Stack>
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" }, gap: 1.75 }}>
         {/* Vehicles */}

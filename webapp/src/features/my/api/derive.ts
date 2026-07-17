@@ -22,16 +22,31 @@ export function initialsOf(u: Pick<UserInfo | Employee, "firstName" | "lastName"
   return `${f[0] ?? ""}${l[0] ?? ""}`.toUpperCase() || "?";
 }
 
+// Parse a YYYY-MM-DD (or ISO datetime prefixed with YYYY-MM-DD) into its
+// numeric components. Avoids `new Date("YYYY-MM-DD")`, which the spec
+// requires to be parsed as UTC midnight — that shifts by a full day in
+// negative TZ offsets, miscomputing month/birthday boundaries. Returns
+// null if the input is missing or doesn't start with a well-formed date.
+function parseDateOnly(v: string | null | undefined): { y: number; m: number; d: number } | null {
+  if (!v) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(v);
+  if (!match) return null;
+  const y = Number(match[1]);
+  const m = Number(match[2]);
+  const d = Number(match[3]);
+  if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+  return { y, m: m - 1, d }; // m is 0-indexed to match Date.getMonth()
+}
+
 // "5y 4m" style — same shape people-app renders for length of service.
 // Anchor date is a param so callers can pass a fixed "today" if they need
 // deterministic tests; falls back to now.
 export function serviceLength(startDate: string | null | undefined, now: Date = new Date()): string {
-  if (!startDate) return DASH;
-  const start = new Date(startDate);
-  if (Number.isNaN(start.getTime())) return DASH;
-  let years = now.getFullYear() - start.getFullYear();
-  let months = now.getMonth() - start.getMonth();
-  if (now.getDate() < start.getDate()) months -= 1;
+  const start = parseDateOnly(startDate);
+  if (!start) return DASH;
+  let years = now.getFullYear() - start.y;
+  let months = now.getMonth() - start.m;
+  if (now.getDate() < start.d) months -= 1;
   if (months < 0) {
     years -= 1;
     months += 12;
@@ -41,12 +56,11 @@ export function serviceLength(startDate: string | null | undefined, now: Date = 
 }
 
 export function ageFromDob(dob: string | null | undefined, now: Date = new Date()): string {
-  if (!dob) return DASH;
-  const d = new Date(dob);
-  if (Number.isNaN(d.getTime())) return DASH;
-  let age = now.getFullYear() - d.getFullYear();
-  const m = now.getMonth() - d.getMonth();
-  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age -= 1;
+  const b = parseDateOnly(dob);
+  if (!b) return DASH;
+  let age = now.getFullYear() - b.y;
+  const m = now.getMonth() - b.m;
+  if (m < 0 || (m === 0 && now.getDate() < b.d)) age -= 1;
   return age >= 0 ? String(age) : DASH;
 }
 

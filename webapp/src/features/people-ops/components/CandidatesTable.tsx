@@ -100,7 +100,11 @@ export default function CandidatesTable() {
                 {c.signal}
               </TableCell>
               <TableCell align="right">
-                <Button variant={c.actionPrimary ? "contained" : "outlined"} size="small">
+                <Button
+                  variant={c.actionPrimary ? "contained" : "outlined"}
+                  size="small"
+                  aria-label={`${c.actionLabel} ${c.name}`}
+                >
                   {c.actionLabel}
                 </Button>
               </TableCell>

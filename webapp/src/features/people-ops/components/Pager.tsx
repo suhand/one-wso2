@@ -35,6 +35,7 @@ export default function Pager({
         onClick={onPrev}
         disabled={page === 0}
         size="small"
+        aria-label="Previous page"
         sx={{ width: 22, height: 22, fontSize: 14, border: 1, borderColor: "divider", borderRadius: 0.75 }}
       >
         ‹
@@ -55,6 +56,7 @@ export default function Pager({
         onClick={onNext}
         disabled={page >= pageCount - 1}
         size="small"
+        aria-label="Next page"
         sx={{ width: 22, height: 22, fontSize: 14, border: 1, borderColor: "divider", borderRadius: 0.75 }}
       >
         ›

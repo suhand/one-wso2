@@ -1,12 +1,13 @@
-import { Card, Skeleton, Stack } from "@wso2/oxygen-ui";
+import { Card, Skeleton, Stack, Typography } from "@wso2/oxygen-ui";
 import type { Employee } from "../api/types";
 import { DASH, display, formatDate, fullName, serviceLength } from "../api/derive";
 import FieldGrid, { type FieldDef } from "./FieldGrid";
 
 // Renders the 22-field grid the people-app profile shows for General
-// information. Values come straight from the Employee DTO; when the DTO
-// is missing (loading / error) we render a skeleton grid of the same
-// shape so the layout doesn't jump.
+// information. Values come straight from the Employee DTO. When the DTO
+// is absent we distinguish two states: (a) still loading — render a
+// skeleton grid so the layout doesn't jump; (b) finished but no data —
+// render an explicit "unavailable" state so the page doesn't look stuck.
 export default function GeneralInfo({
   employee,
   isLoading,
@@ -17,7 +18,7 @@ export default function GeneralInfo({
   if (!employee) {
     return (
       <Card variant="outlined" sx={{ p: 2 }}>
-        <FieldGridSkeleton rows={isLoading ? 6 : 6} />
+        {isLoading ? <FieldGridSkeleton rows={6} /> : <UnavailableNotice />}
       </Card>
     );
   }
@@ -80,5 +81,13 @@ function FieldGridSkeleton({ rows }: { rows: number }) {
         <Skeleton key={i} variant="rectangular" height={38} sx={{ borderRadius: 1 }} />
       ))}
     </Stack>
+  );
+}
+
+function UnavailableNotice() {
+  return (
+    <Typography sx={{ fontSize: 13, color: "text.secondary", py: 1 }}>
+      General information isn't available for your account right now.
+    </Typography>
   );
 }

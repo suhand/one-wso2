@@ -81,8 +81,16 @@ export default function ProfileHero({
         </Stack>
       </Box>
 
+      {/* QR + Edit are placeholders — disabled until the corresponding
+          people-app endpoints (QR reveal, profile edit) are wired up. */}
       <Stack direction="row" spacing={0.75} sx={{ position: "relative", flexShrink: 0 }}>
-        <IconButton title="QR" size="small" sx={{ border: 1, borderColor: "divider", borderRadius: 1.125 }}>
+        <IconButton
+          title="QR (coming soon)"
+          aria-label="Show QR code (coming soon)"
+          size="small"
+          disabled
+          sx={{ border: 1, borderColor: "divider", borderRadius: 1.125 }}
+        >
           <svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9}>
             <rect x={3} y={3} width={7} height={7} rx={1} />
             <rect x={14} y={3} width={7} height={7} rx={1} />
@@ -90,7 +98,13 @@ export default function ProfileHero({
             <path d="M14 14h3v3h-3zM20 14h1v1h-1zM14 20h1v1h-1zM17 17h4v4" />
           </svg>
         </IconButton>
-        <IconButton title="Edit" size="small" sx={{ border: 1, borderColor: "divider", borderRadius: 1.125 }}>
+        <IconButton
+          title="Edit profile (coming soon)"
+          aria-label="Edit profile (coming soon)"
+          size="small"
+          disabled
+          sx={{ border: 1, borderColor: "divider", borderRadius: 1.125 }}
+        >
           <svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9}>
             <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 12.5-12.5z" />
           </svg>

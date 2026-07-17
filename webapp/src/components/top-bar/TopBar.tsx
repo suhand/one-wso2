@@ -64,7 +64,14 @@ export default function TopBar({ onOpenWaffle, onOpenAsk }: TopBarProps) {
       {/* Ask Novera bar */}
       <Box
         role="button"
+        tabIndex={0}
         onClick={onOpenAsk}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onOpenAsk();
+          }
+        }}
         sx={{
           flex: 1,
           maxWidth: 680,
