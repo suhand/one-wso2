@@ -1,0 +1,19 @@
+// Template for public/config.js — copy to public/config.js and fill values.
+// This file is loaded at runtime by index.html BEFORE the React bundle, so
+// every environment can serve the same static bundle with different config.
+// Never commit the filled-in config.js (see .gitignore).
+window.config = {
+  // Asgardeo OAuth
+  ONE_WSO2_AUTH_BASE_URL: "https://api.asgardeo.io/t/<your-org>",
+  ONE_WSO2_AUTH_CLIENT_ID: "<your-client-id>",
+  ONE_WSO2_AUTH_SIGN_IN_REDIRECT_URL: "http://localhost:3000",
+  ONE_WSO2_AUTH_SIGN_OUT_REDIRECT_URL: "http://localhost:3000",
+
+  // UI
+  ONE_WSO2_THEME: "acrylicOrange",
+
+  // people-ops-suite people-app backend base URL. Same value as people-app's
+  // REACT_APP_BACKEND_BASE_URL — usually a Choreo API gateway URL. Powers
+  // the live My profile page (employee + personal info fetch).
+  ONE_WSO2_PEOPLE_BACKEND_URL: "<your-people-app-backend-url>",
+};
