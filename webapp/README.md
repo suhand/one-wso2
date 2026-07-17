@@ -74,7 +74,7 @@ Runtime config is read from `window.config` set by `public/config.js`. Build-tim
 | `ONE_WSO2_AUTH_SIGN_IN_REDIRECT_URL` | Sign-in callback URL (must match Asgardeo app registration) | `http://localhost:3000` |
 | `ONE_WSO2_AUTH_SIGN_OUT_REDIRECT_URL` | Sign-out callback URL | `http://localhost:3000` |
 | `ONE_WSO2_PEOPLE_BACKEND_URL` | people-ops-suite people-app backend base URL (Choreo gateway) — powers the live My profile page | `<people-app-backend-url>` |
-| `ONE_WSO2_THEME` | Theme name (`acrylicOrange`, `acrylicPurple`, `classic`, `highContrast`) — default `acrylicOrange` (with the one-wso2 palette overlay) | `acrylicOrange` |
+| `ONE_WSO2_THEME` | Theme name (`oneWso2` / `acrylicOrange`, `classic`, `highContrast`) — default `oneWso2` (the one-wso2 palette overlay on top of AcrylicOrange; `acrylicOrange` is an alias for the same theme) | `oneWso2` |
 | `ONE_WSO2_DEV_BYPASS_AUTH` | Dev-only escape hatch — when `true`, AuthGuard renders without ever calling Asgardeo. **Never** set in prod. | `false` |
 
 ### Import Aliases

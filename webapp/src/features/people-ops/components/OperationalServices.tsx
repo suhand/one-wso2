@@ -1,4 +1,21 @@
-import { Box, Button, Card, Chip, Stack, Typography } from "@wso2/oxygen-ui";
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+import { Box, Button, Card, Stack, Typography } from "@wso2/oxygen-ui";
+import DetailRow from "@components/detail-row/DetailRow";
 import { CAFETERIA_MENU } from "../constants/data";
 
 // Three operational cards — people-ops-suite backends surfaced inside the
@@ -19,9 +36,14 @@ export default function OperationalServices() {
           <Typography sx={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "text.secondary", fontWeight: 600, mb: 1.5 }}>
             Leave · admin
           </Typography>
-          <OpsRow icon="🌴" title="Pending approvals" meta="7 across your reports" action={{ label: "Review", primary: true }} />
-          <OpsRow icon="📅" title="On leave today" meta="3 in your team · 24 org-wide" />
-          <OpsRow icon="📊" title="Balance forecast" meta="42 will forfeit >5 days at year-end" last />
+          <DetailRow
+            icon="🌴"
+            title="Pending approvals"
+            meta="7 across your reports"
+            trailing={<Button variant="contained" size="small">Review</Button>}
+          />
+          <DetailRow icon="📅" title="On leave today" meta="3 in your team · 24 org-wide" />
+          <DetailRow icon="📊" title="Balance forecast" meta="42 will forfeit >5 days at year-end" last />
         </Card>
 
         {/* Cafeteria & menu — 4 meal sections */}
@@ -30,7 +52,7 @@ export default function OperationalServices() {
             Cafeteria &amp; menu
           </Typography>
           {CAFETERIA_MENU.map((m, idx) => (
-            <OpsRow
+            <DetailRow
               key={m.meal}
               icon={m.icon}
               title={m.meal}
@@ -45,9 +67,14 @@ export default function OperationalServices() {
           <Typography sx={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "text.secondary", fontWeight: 600, mb: 1.5 }}>
             Vehicle registry
           </Typography>
-          <OpsRow icon="🚗" title="New registrations" meta="4 this week · via people-app" action={{ label: "Review" }} />
-          <OpsRow icon="🅿" title="Parking utilization" meta="78% · Colombo HQ" />
-          <OpsRow icon="🛠" title="Shuttle roster" meta="next revision Aug 1" last />
+          <DetailRow
+            icon="🚗"
+            title="New registrations"
+            meta="4 this week · via people-app"
+            trailing={<Button variant="outlined" size="small">Review</Button>}
+          />
+          <DetailRow icon="🅿" title="Parking utilization" meta="78% · Colombo HQ" />
+          <DetailRow icon="🛠" title="Shuttle roster" meta="next revision Aug 1" last />
         </Card>
       </Box>
 
@@ -77,38 +104,3 @@ export default function OperationalServices() {
   );
 }
 
-function OpsRow({
-  icon,
-  title,
-  meta,
-  action,
-  last,
-}: {
-  icon: string;
-  title: string;
-  meta: string;
-  action?: { label: string; primary?: boolean };
-  last?: boolean;
-}) {
-  return (
-    <Stack
-      direction="row"
-      alignItems="center"
-      spacing={1.25}
-      sx={{ py: 1.125, borderBottom: last ? 0 : 1, borderColor: "divider" }}
-    >
-      <Box sx={{ width: 26, height: 26, borderRadius: 0.875, bgcolor: "action.hover", display: "grid", placeItems: "center", fontSize: 13, flexShrink: 0 }}>
-        {icon}
-      </Box>
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography sx={{ fontWeight: 500, fontSize: 13 }}>{title}</Typography>
-        <Typography sx={{ fontSize: 12, color: "text.secondary" }}>{meta}</Typography>
-      </Box>
-      {action && (
-        <Button variant={action.primary ? "contained" : "outlined"} size="small">
-          {action.label}
-        </Button>
-      )}
-    </Stack>
-  );
-}

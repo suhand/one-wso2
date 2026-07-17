@@ -1,4 +1,21 @@
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 import { Box, Button, Card, Chip, Stack, Typography } from "@wso2/oxygen-ui";
+import DetailRow from "@components/detail-row/DetailRow";
 
 // Three cards surfacing adjacent people-ops-suite services inside the
 // profile: Vehicles, Time off, Performance & growth.
@@ -32,8 +49,8 @@ export default function ConnectedServices() {
           <Typography sx={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "text.secondary", fontWeight: 600, mb: 1.5 }}>
             Vehicles
           </Typography>
-          <ConnectedRow icon="🚗" title="CAB-4287" meta="Toyota Aqua" actionLabel="Manage" />
-          <ConnectedRow icon="🏍" title="BAJ-1122" meta="Bajaj Pulsar" actionLabel="Manage" last />
+          <DetailRow icon="🚗" title="CAB-4287" meta="Toyota Aqua" trailing={<Button variant="outlined" size="small">Manage</Button>} />
+          <DetailRow icon="🏍" title="BAJ-1122" meta="Bajaj Pulsar" trailing={<Button variant="outlined" size="small">Manage</Button>} last />
         </Card>
 
         {/* Time off */}
@@ -41,8 +58,8 @@ export default function ConnectedServices() {
           <Typography sx={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "text.secondary", fontWeight: 600, mb: 1.5 }}>
             Time off
           </Typography>
-          <ConnectedRow icon="🌴" title="Leave balance" meta="12 days annual · 4 casual · 7 sick" actionLabel="Request" actionPrimary />
-          <ConnectedRow icon="📅" title="Upcoming" meta="Aug 12–14 · approved" last />
+          <DetailRow icon="🌴" title="Leave balance" meta="12 days annual · 4 casual · 7 sick" trailing={<Button variant="contained" size="small">Request</Button>} />
+          <DetailRow icon="📅" title="Upcoming" meta="Aug 12–14 · approved" last />
         </Card>
 
         {/* Performance */}
@@ -77,40 +94,3 @@ export default function ConnectedServices() {
   );
 }
 
-function ConnectedRow({
-  icon,
-  title,
-  meta,
-  actionLabel,
-  actionPrimary,
-  last,
-}: {
-  icon: string;
-  title: string;
-  meta: string;
-  actionLabel?: string;
-  actionPrimary?: boolean;
-  last?: boolean;
-}) {
-  return (
-    <Stack
-      direction="row"
-      alignItems="center"
-      spacing={1.25}
-      sx={{ py: 1.125, borderBottom: last ? 0 : 1, borderColor: "divider" }}
-    >
-      <Box sx={{ width: 26, height: 26, borderRadius: 0.875, bgcolor: "action.hover", display: "grid", placeItems: "center", fontSize: 13, flexShrink: 0 }}>
-        {icon}
-      </Box>
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography sx={{ fontWeight: 500, fontSize: 13 }}>{title}</Typography>
-        <Typography sx={{ fontSize: 12, color: "text.secondary" }}>{meta}</Typography>
-      </Box>
-      {actionLabel && (
-        <Button variant={actionPrimary ? "contained" : "outlined"} size="small">
-          {actionLabel}
-        </Button>
-      )}
-    </Stack>
-  );
-}

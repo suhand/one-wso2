@@ -1,6 +1,23 @@
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 import { useEffect } from "react";
 import { Box, IconButton, Stack, Typography, Avatar } from "@wso2/oxygen-ui";
 import { useThemeMode } from "@context/theme-mode/ThemeModeContext";
+import { useAsgardeoUser } from "@hooks/useAsgardeoUser";
 
 interface TopBarProps {
   onOpenWaffle: () => void;
@@ -13,6 +30,7 @@ interface TopBarProps {
 // it (wired here so it's available on every page).
 export default function TopBar({ onOpenWaffle, onOpenAsk }: TopBarProps) {
   const { mode, toggle } = useThemeMode();
+  const user = useAsgardeoUser();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -144,8 +162,11 @@ export default function TopBar({ onOpenWaffle, onOpenAsk }: TopBarProps) {
             <path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z" />
           </svg>
         </IconButton>
-        <Avatar sx={{ width: 32, height: 32, fontSize: 12, fontWeight: 600 }}>
-          CR
+        <Avatar
+          title={user.displayName ?? user.email ?? "Signed in"}
+          sx={{ width: 32, height: 32, fontSize: 12, fontWeight: 600 }}
+        >
+          {user.initials || (user.ready ? "?" : "")}
         </Avatar>
       </Stack>
     </Box>

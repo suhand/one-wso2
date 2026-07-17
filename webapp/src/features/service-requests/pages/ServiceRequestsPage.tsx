@@ -1,4 +1,35 @@
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 import { Box, Button, Card, Chip, Stack, TextField, Typography } from "@wso2/oxygen-ui";
+import DetailRow from "@components/detail-row/DetailRow";
+
+type RecentTone = "ok" | "watch";
+const TONE_CHIP_COLOR: Record<RecentTone, "success" | "warning"> = { ok: "success", watch: "warning" };
+
+function StatusChip({ label, tone }: { label: string; tone: RecentTone }) {
+  return (
+    <Chip
+      label={label}
+      color={TONE_CHIP_COLOR[tone]}
+      size="small"
+      sx={{ height: 20, fontSize: 11, fontWeight: 600 }}
+    />
+  );
+}
 
 const CHIPS = [
   "Submit expense",
@@ -61,9 +92,9 @@ export default function ServiceRequestsPage() {
           <Typography sx={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "text.secondary", fontWeight: 600, mb: 1.5 }}>
             My recent requests
           </Typography>
-          <RecentRow icon="🖥" title="Infra: staging node" meta="approved · Infra Ops" pill={{ label: "Done", tone: "ok" }} />
-          <RecentRow icon="✉️" title="New group: one-design@" meta="pending" pill={{ label: "In review", tone: "watch" }} />
-          <RecentRow icon="💳" title="Expense $96" meta="reimbursed" pill={{ label: "Done", tone: "ok" }} last />
+          <DetailRow icon="🖥" title="Infra: staging node" meta="approved · Infra Ops" trailing={<StatusChip label="Done" tone="ok" />} />
+          <DetailRow icon="✉️" title="New group: one-design@" meta="pending" trailing={<StatusChip label="In review" tone="watch" />} />
+          <DetailRow icon="💳" title="Expense $96" meta="reimbursed" trailing={<StatusChip label="Done" tone="ok" />} last />
         </Card>
       </Box>
 
@@ -93,35 +124,3 @@ function FormField({ label, defaultValue }: { label: string; defaultValue: strin
   );
 }
 
-function RecentRow({
-  icon,
-  title,
-  meta,
-  pill,
-  last,
-}: {
-  icon: string;
-  title: string;
-  meta: string;
-  pill: { label: string; tone: "ok" | "watch" };
-  last?: boolean;
-}) {
-  const chipColor = pill.tone === "ok" ? "success" : "warning";
-  return (
-    <Stack
-      direction="row"
-      alignItems="center"
-      spacing={1.25}
-      sx={{ py: 1.125, borderBottom: last ? 0 : 1, borderColor: "divider" }}
-    >
-      <Box sx={{ width: 26, height: 26, borderRadius: 0.875, bgcolor: "action.hover", display: "grid", placeItems: "center", fontSize: 13 }}>
-        {icon}
-      </Box>
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography sx={{ fontWeight: 500, fontSize: 13 }}>{title}</Typography>
-        <Typography sx={{ fontSize: 12, color: "text.secondary" }}>{meta}</Typography>
-      </Box>
-      <Chip label={pill.label} color={chipColor} size="small" sx={{ height: 20, fontSize: 11, fontWeight: 600 }} />
-    </Stack>
-  );
-}

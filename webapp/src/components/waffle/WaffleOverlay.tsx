@@ -1,3 +1,20 @@
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+import { useEffect, useRef } from "react";
 import { Box, Typography } from "@wso2/oxygen-ui";
 import { useNavigate } from "react-router";
 import {
@@ -14,9 +31,27 @@ interface WaffleOverlayProps {
 // The 9-dots perspective switcher. Grid of tiles: functional (persona) on
 // top, cross (My / Requests) below. Locked tiles show 🔒 and don't
 // navigate.
+//
+// Keyboard support: Escape dismisses; tiles are real <button> elements so
+// Tab moves between them and Enter/Space activates. Focus lands on the
+// first accessible tile when the overlay opens so a keyboard user isn't
+// stranded outside the modal.
 export default function WaffleOverlay({ onClose }: WaffleOverlayProps) {
   const navigate = useNavigate();
   const active = useActivePerspective();
+  const firstTileRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    firstTileRef.current?.focus();
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   const pick = (p: PerspectiveDef) => {
     if (!p.access || !p.path) return;
@@ -55,6 +90,7 @@ export default function WaffleOverlay({ onClose }: WaffleOverlayProps) {
           items={FUNCTIONAL_PERSPECTIVES}
           activeKey={active.key}
           onPick={pick}
+          firstTileRef={firstTileRef}
         />
         <WaffleGroup
           title="For you"
@@ -87,9 +123,12 @@ interface WaffleGroupProps {
   items: readonly PerspectiveDef[];
   activeKey: string;
   onPick: (p: PerspectiveDef) => void;
+  firstTileRef?: React.RefObject<HTMLButtonElement | null>;
 }
 
-function WaffleGroup({ title, items, activeKey, onPick }: WaffleGroupProps) {
+function WaffleGroup({ title, items, activeKey, onPick, firstTileRef }: WaffleGroupProps) {
+  let firstAccessibleIndex = items.findIndex((p) => p.access);
+  if (firstAccessibleIndex < 0) firstAccessibleIndex = 0;
   return (
     <>
       <Typography
@@ -105,14 +144,22 @@ function WaffleGroup({ title, items, activeKey, onPick }: WaffleGroupProps) {
         {title}
       </Typography>
       <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 1 }}>
-        {items.map((p) => (
+        {items.map((p, i) => (
           <Box
             key={p.key}
-            role="button"
+            component="button"
+            type="button"
+            ref={firstTileRef && i === firstAccessibleIndex ? firstTileRef : undefined}
             onClick={() => onPick(p)}
+            disabled={!p.access}
+            aria-label={p.access ? `Switch to ${p.label}` : `${p.label} (locked)`}
+            aria-current={p.key === activeKey ? "page" : undefined}
             sx={{
+              all: "unset",
+              boxSizing: "border-box",
               aspectRatio: "1",
               border: 1,
+              borderStyle: "solid",
               borderColor: p.key === activeKey ? "primary.main" : "divider",
               borderRadius: 1.375,
               display: "flex",
@@ -127,9 +174,17 @@ function WaffleGroup({ title, items, activeKey, onPick }: WaffleGroupProps) {
               cursor: p.access ? "pointer" : "not-allowed",
               bgcolor: p.key === activeKey ? "primary.light" : "transparent",
               transition: "border-color .15s, background-color .15s",
-              "&:hover": p.access
-                ? { borderColor: "primary.main", color: "primary.main", bgcolor: "primary.light" }
-                : undefined,
+              "&:hover:not(:disabled)": {
+                borderColor: "primary.main",
+                color: "primary.main",
+                bgcolor: "primary.light",
+              },
+              "&:focus-visible": {
+                outline: 2,
+                outlineStyle: "solid",
+                outlineColor: "primary.main",
+                outlineOffset: 2,
+              },
               px: 0.75,
               py: 0.75,
               textAlign: "center",

@@ -1,4 +1,21 @@
-import { Box, Card, Stack, TextField, Typography } from "@wso2/oxygen-ui";
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+import { Card, TextField, Typography } from "@wso2/oxygen-ui";
+import DetailRow from "@components/detail-row/DetailRow";
 
 export default function EmployeeDirectory() {
   return (
@@ -14,38 +31,9 @@ export default function EmployeeDirectory() {
         placeholder="Search 940 employees — name, team, location…"
         sx={{ mb: 1 }}
       />
-      <DirRow icon="✦" title="Ask Novera suggested" meta="&quot;Who owns Ballerina consulting delivery in EMEA?&quot;" />
-      <DirRow icon="📊" title="Headcount" meta="940 · +18 QTD · attrition 7% (↓ 1.2pt)" />
-      <DirRow icon="🎂" title="This week" meta="6 birthdays · 3 anniversaries" last />
+      <DetailRow icon="✦" title="Ask Novera suggested" meta='"Who owns Ballerina consulting delivery in EMEA?"' />
+      <DetailRow icon="📊" title="Headcount" meta="940 · +18 QTD · attrition 7% (↓ 1.2pt)" />
+      <DetailRow icon="🎂" title="This week" meta="6 birthdays · 3 anniversaries" last />
     </Card>
-  );
-}
-
-function DirRow({
-  icon,
-  title,
-  meta,
-  last,
-}: {
-  icon: string;
-  title: string;
-  meta: string;
-  last?: boolean;
-}) {
-  return (
-    <Stack
-      direction="row"
-      alignItems="center"
-      spacing={1.25}
-      sx={{ py: 1.125, borderBottom: last ? 0 : 1, borderColor: "divider" }}
-    >
-      <Box sx={{ width: 26, height: 26, borderRadius: 0.875, bgcolor: "action.hover", display: "grid", placeItems: "center", fontSize: 13 }}>
-        {icon}
-      </Box>
-      <Box>
-        <Typography sx={{ fontWeight: 500, fontSize: 13 }}>{title}</Typography>
-        <Typography sx={{ fontSize: 12, color: "text.secondary" }}>{meta}</Typography>
-      </Box>
-    </Stack>
   );
 }

@@ -1,51 +1,29 @@
-import { useEffect, useState } from "react";
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
+import { authedGet, HttpError } from "@api/http";
 import { peopleBackendUrl, peopleServiceUrls } from "@config/apiConfig";
 import type { Employee, EmployeePersonalInfo, UserInfo } from "./types";
 
-// Thrown by authedGet — carries the HTTP status so retry logic (both the
-// per-query retry in useMeProfile and the global one in AppWithConfig's
-// QueryClient) can key off it without regex-parsing the message.
-//
-// The user-facing `.message` intentionally omits the raw response body —
-// backend diagnostics can leak stack traces / internal identifiers and
-// this Error surfaces via MyProfilePage's error banner (visible to the
-// signed-in user). Sanitized body is preserved on `.responseBody` for
-// controlled dev logging (see authedGet) but never in the message.
-export class HttpError extends Error {
-  readonly status: number;
-  readonly url: string;
-  readonly responseBody: string;
-  constructor(url: string, status: number, body: string) {
-    super(`Request failed with HTTP ${status}`);
-    this.name = "HttpError";
-    this.status = status;
-    this.url = url;
-    this.responseBody = body;
-  }
-}
-
-// Authed fetch — Bearer <Asgardeo id_token>. Same header shape people-app's
-// axios interceptor sets (Choreo's gateway rewrites this into
-// x-jwt-assertion for the backend's JwtInterceptor).
-//
-// No Content-Type header on GET: with no body the header is meaningless and
-// makes the request non-simple, forcing an unnecessary CORS preflight.
-async function authedGet<T>(url: string, idToken: string): Promise<T> {
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${idToken}` },
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    // Dev-only console log — never render `body` in the UI.
-    if (import.meta.env.DEV && body) {
-      console.warn(`[authedGet] ${url} → HTTP ${res.status}: ${body.slice(0, 400)}`);
-    }
-    throw new HttpError(url, res.status, body);
-  }
-  return res.json() as Promise<T>;
-}
+// Re-export HttpError for existing feature-scoped consumers that still
+// import it from here. Prefer importing from @api/http directly.
+export { HttpError };
 
 export interface MeProfile {
   userInfo: UserInfo;
@@ -70,9 +48,14 @@ type SubState =
   | { status: "ready"; sub: string }
   | { status: "error"; message: string };
 
-function useAsgardeoSub(): SubState {
+// A tick counter drives the identity-resolution effect: bumping it re-runs
+// getDecodedIdToken() so a user-visible "Retry" can recover from a decode
+// error without having to sign out and back in.
+function useAsgardeoSub(): { state: SubState; retry: () => void } {
   const { isSignedIn, getDecodedIdToken } = useAsgardeo();
   const [state, setState] = useState<SubState>({ status: "loading" });
+  const [retryTick, setRetryTick] = useState(0);
+  const retry = useCallback(() => setRetryTick((n) => n + 1), []);
 
   useEffect(() => {
     if (!isSignedIn) {
@@ -102,9 +85,9 @@ function useAsgardeoSub(): SubState {
     return () => {
       cancelled = true;
     };
-  }, [isSignedIn, getDecodedIdToken]);
+  }, [isSignedIn, getDecodedIdToken, retryTick]);
 
-  return state;
+  return { state, retry };
 }
 
 // Two-step fetch that mirrors people-app's own me flow:
@@ -114,7 +97,7 @@ function useAsgardeoSub(): SubState {
 // Steps 2 and 3 run in parallel once employeeId is known.
 export function useMeProfile() {
   const { getIdToken, isSignedIn } = useAsgardeo();
-  const subState = useAsgardeoSub();
+  const { state: subState, retry: retryIdentity } = useAsgardeoSub();
   const userSub = subState.status === "ready" ? subState.sub : undefined;
   const backendConfigured = Boolean(peopleBackendUrl);
   const identityError = subState.status === "error" ? subState.message : null;
@@ -155,10 +138,18 @@ export function useMeProfile() {
   // the loading skeleton. Identity errors take precedence — if the JWT
   // subject is unresolvable, the /user-info call would fail anyway.
   //
+  // We override `refetch` on the synthetic result: React Query's own
+  // refetch ignores `enabled: false` and would fire the profile query
+  // with key ["me-profile", undefined], bypassing the per-user cache
+  // scoping. The right retry here re-runs identity resolution — if the
+  // decode then succeeds, `enabled` flips true and the profile query
+  // starts naturally; if it still fails, the user sees the same error
+  // with a fresh chance to retry.
+  //
   // The synthetic result doesn't match React Query's discriminated union
   // exactly (the four *Result variants have exclusive boolean flags), so
   // we cast through unknown; the consumer only reads isError + error +
-  // isLoading, and this shape sets those consistently.
+  // isLoading + refetch, and this shape sets those consistently.
   if (identityError && !query.isError) {
     const synthetic = {
       ...query,
@@ -169,6 +160,10 @@ export function useMeProfile() {
       isFetching: false,
       status: "error" as const,
       error: new Error(identityError),
+      refetch: (async () => {
+        retryIdentity();
+        return query;
+      }) as typeof query.refetch,
     };
     return synthetic as unknown as typeof query;
   }
