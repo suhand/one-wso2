@@ -56,6 +56,9 @@ function initialsFrom(claims: IdTokenClaims): string {
     const b = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
     if (a) return `${a}${b}`.toUpperCase();
   }
+  // Fallback for IdPs that emit only one of the two name claims.
+  if (g) return g[0].toUpperCase();
+  if (f) return f[0].toUpperCase();
   const email = (claims.email ?? claims.preferred_username)?.trim();
   if (email) return email[0]?.toUpperCase() ?? "";
   return "";

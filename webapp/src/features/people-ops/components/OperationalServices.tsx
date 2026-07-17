@@ -40,7 +40,7 @@ export default function OperationalServices() {
             icon="🌴"
             title="Pending approvals"
             meta="7 across your reports"
-            trailing={<Button variant="contained" size="small">Review</Button>}
+            trailing={<Button variant="contained" size="small" aria-label="Review pending leave approvals">Review</Button>}
           />
           <DetailRow icon="📅" title="On leave today" meta="3 in your team · 24 org-wide" />
           <DetailRow icon="📊" title="Balance forecast" meta="42 will forfeit >5 days at year-end" last />
@@ -71,7 +71,7 @@ export default function OperationalServices() {
             icon="🚗"
             title="New registrations"
             meta="4 this week · via people-app"
-            trailing={<Button variant="outlined" size="small">Review</Button>}
+            trailing={<Button variant="outlined" size="small" aria-label="Review new vehicle registrations">Review</Button>}
           />
           <DetailRow icon="🅿" title="Parking utilization" meta="78% · Colombo HQ" />
           <DetailRow icon="🛠" title="Shuttle roster" meta="next revision Aug 1" last />
