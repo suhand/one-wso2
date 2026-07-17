@@ -1,5 +1,7 @@
-// Mock data for the People Ops perspective — ported verbatim from the
-// prototype's index.html. Swap each block for a React Query hook
+// Mock data for the People Ops perspective — placeholder names only.
+// Every name in this file is an obviously-generic label ("Candidate A",
+// "Joiner 1", …) so nothing here can be mistaken for real HR data about
+// a real person. Swap each block for a React Query hook
 // (useOpenRequisitions, useInterviewsThisWeek, …) once backends exist.
 
 import type {
@@ -10,7 +12,7 @@ import type {
 } from "../types";
 
 export const INSIGHT_TEXT =
-  '"3 Senior Lead — Security & Compliance Officer candidates are ready for a final panel. Isuru P.\'s offer expires in 5 days. 2 promotion nominations for the H1 cycle are overdue — Kavindu W. and Roshan B. Want me to schedule the panel and nudge the nominators?"';
+  '"3 Senior Lead — Security & Compliance Officer candidates are ready for a final panel. Candidate A\'s offer expires in 5 days. 2 promotion nominations for the H1 cycle are overdue — Nominee 4 and Nominee 5. Want me to schedule the panel and nudge the nominators?"';
 export const INSIGHT_SOURCE =
   "▸ from: Hiring · Candidate history · Performance · people-ops-suite";
 
@@ -28,7 +30,7 @@ export const OPEN_REQUISITIONS: Requisition[] = [
     location: "Sri Lanka",
     daysOpen: 32,
     team: "Digital Transformation",
-    owner: "A. Silva",
+    owner: "Owner 1",
     status: "aging",
     funnel: [
       { label: "Shortlisted", count: 22 },
@@ -43,7 +45,7 @@ export const OPEN_REQUISITIONS: Requisition[] = [
     location: "Spain",
     daysOpen: 12,
     team: "Sales",
-    owner: "N. Kumara",
+    owner: "Owner 2",
     status: "on-track",
     funnel: [
       { label: "Shortlisted", count: 14 },
@@ -70,37 +72,37 @@ export const OPEN_REQUISITIONS: Requisition[] = [
 
 export const INTERVIEWS_THIS_WEEK: Interview[] = [
   {
-    id: "iv-isuru",
-    candidateName: "Isuru Perera",
+    id: "iv-a",
+    candidateName: "Candidate A",
     when: "Tue 10:00 IST",
     role: "Sr Lead Security & Compliance",
-    panel: "A. Silva, D. Wijesuriya, R. Herath",
+    panel: "Interviewer 1, Interviewer 2, Interviewer 3",
     pill: { label: "Final", tone: "crit" },
   },
   {
-    id: "iv-miguel",
-    candidateName: "Miguel Álvarez",
+    id: "iv-b",
+    candidateName: "Candidate B",
     when: "Wed 14:00 IST",
     role: "Sr Account Manager (Spain)",
-    panel: "N. Kumara + 2",
+    panel: "Owner 2 + 2",
   },
   {
-    id: "iv-dilan",
-    candidateName: "Dilan Muthukuda",
+    id: "iv-d",
+    candidateName: "Candidate D",
     when: "Wed 16:00 IST",
     role: "Sr Lead Security & Compliance",
     note: "re-engage discussion",
   },
   {
-    id: "iv-sofia",
-    candidateName: "Sofía García",
+    id: "iv-f",
+    candidateName: "Candidate F",
     when: "Thu 11:00 IST",
     role: "Sr Account Manager (Spain)",
     note: "referral loop",
   },
   {
-    id: "iv-kavitha",
-    candidateName: "Kavitha Wijesuriya",
+    id: "iv-g",
+    candidateName: "Candidate G",
     when: "Fri 09:00 IST",
     role: "Sr Lead Security & Compliance",
     note: "needs a 3rd interviewer",
@@ -110,10 +112,10 @@ export const INTERVIEWS_THIS_WEEK: Interview[] = [
 
 export const CANDIDATES: Candidate[] = [
   {
-    id: "c-isuru",
-    initials: "IP",
-    name: "Isuru Perera",
-    background: "8y GRC · CISM · WSO2 alum",
+    id: "c-a",
+    initials: "CA",
+    name: "Candidate A",
+    background: "8y GRC · CISM · industry alum",
     role: "Sr Lead Security & Compliance",
     stage: "Offer expires 5d",
     stageTone: "crit",
@@ -123,21 +125,21 @@ export const CANDIDATES: Candidate[] = [
     actionPrimary: true,
   },
   {
-    id: "c-miguel",
-    initials: "MA",
-    name: "Miguel Álvarez",
+    id: "c-b",
+    initials: "CB",
+    name: "Candidate B",
     background: "SaaS enterprise sales · Madrid",
     role: "Sr Account Manager · Spain",
     stage: "Case study",
     stageTone: "watch",
-    signal: "Referral · N. Kumara",
+    signal: "Referral · Owner 2",
     signalTone: "neutral",
     actionLabel: "Review",
   },
   {
-    id: "c-rukshan",
-    initials: "RF",
-    name: "Rukshan Fernando",
+    id: "c-c",
+    initials: "CC",
+    name: "Candidate C",
     background: "Salesforce Certified · 6y CRM builds",
     role: "Salesforce Developer",
     stage: "Panel scheduling",
@@ -147,9 +149,9 @@ export const CANDIDATES: Candidate[] = [
     actionLabel: "Open",
   },
   {
-    id: "c-dilan",
-    initials: "DM",
-    name: "Dilan Muthukuda",
+    id: "c-d",
+    initials: "CD",
+    name: "Candidate D",
     background: "Applied 2024 · not offered",
     role: "Sr Lead Security & Compliance",
     stage: "Re-engage?",
@@ -159,10 +161,10 @@ export const CANDIDATES: Candidate[] = [
     actionLabel: "Reopen",
   },
   {
-    id: "c-shashini",
-    initials: "SP",
-    name: "Shashini Perera",
-    background: "FP&A 5y · CIMA · KPMG alum",
+    id: "c-e",
+    initials: "CE",
+    name: "Candidate E",
+    background: "FP&A 5y · CIMA · Big 4 alum",
     role: "Sr Lead Finance Analyst",
     stage: "HR round",
     stageTone: "ok",
@@ -171,10 +173,10 @@ export const CANDIDATES: Candidate[] = [
     actionLabel: "Open",
   },
   {
-    id: "c-priya",
-    initials: "PN",
-    name: "Priya Nair",
-    background: "SDR 3y · Freshworks · Bengaluru",
+    id: "c-f",
+    initials: "CF",
+    name: "Candidate F",
+    background: "SDR 3y · Bengaluru",
     role: "Sr Sales Dev Rep · India",
     stage: "Screen",
     stageTone: "neutral",
@@ -186,80 +188,80 @@ export const CANDIDATES: Candidate[] = [
 
 export const RECENT_JOINERS: Joiner[] = [
   {
-    id: "j-priya-s",
-    name: "Priya Senanayake",
+    id: "j-1",
+    name: "Joiner 1",
     designation: "Senior Software Engineer",
     team: "Ballerina Consulting Team in the Customer Success BU",
     location: "Sri Lanka",
     joinedDate: "2026-07-01",
   },
   {
-    id: "j-ravindu",
-    name: "Ravindu Karunatilake",
+    id: "j-2",
+    name: "Joiner 2",
     designation: "Software Engineer",
     team: "Choreo Team in the Product Engineering BU",
     location: "Sri Lanka",
     joinedDate: "2026-07-01",
   },
   {
-    id: "j-menaka",
-    name: "Menaka Pathirana",
+    id: "j-3",
+    name: "Joiner 3",
     designation: "Marketing Executive",
     team: "Content Team in the Marketing BU",
     location: "Sri Lanka",
     joinedDate: "2026-07-01",
   },
   {
-    id: "j-anushka",
-    name: "Anushka Perera",
+    id: "j-4",
+    name: "Joiner 4",
     designation: "Associate Software Engineer",
     team: "Identity Server Team in the Product Engineering BU",
     location: "Sri Lanka",
     joinedDate: "2026-07-01",
   },
   {
-    id: "j-chamara",
-    name: "Chamara Wickramaratne",
+    id: "j-5",
+    name: "Joiner 5",
     designation: "Associate Lead - Procurement",
     team: "Finance Team in the Corporate BU",
     location: "Sri Lanka",
     joinedDate: "2026-06-15",
   },
   {
-    id: "j-kavindu",
-    name: "Kavindu Weerasinghe",
+    id: "j-6",
+    name: "Joiner 6",
     designation: "Product Designer",
     team: "Design Systems Team in the Corporate BU",
     location: "Sri Lanka",
     joinedDate: "2026-06-15",
   },
   {
-    id: "j-dinesh",
-    name: "Dinesh Fonseka",
+    id: "j-7",
+    name: "Joiner 7",
     designation: "Software Engineer",
     team: "API Manager Team in the Product Engineering BU",
     location: "Sri Lanka",
     joinedDate: "2026-06-15",
   },
   {
-    id: "j-nuwani",
-    name: "Nuwani Silva",
-    designation: "HR Executive",
+    id: "j-8",
+    name: "Joiner 8",
+    designation: "People Operations Executive",
     team: "People Operations Team in the Corporate BU",
     location: "Sri Lanka",
     joinedDate: "2026-06-15",
   },
   {
-    id: "j-amal",
-    name: "Amal Jayasuriya",
+    id: "j-9",
+    name: "Joiner 9",
     designation: "Associate Consultant",
     team: "Forward Deployed Engineering Team in the Customer Success BU",
     location: "Sri Lanka",
     joinedDate: "2026-06-01",
   },
   {
-    id: "j-chathura",
-    name: "Chathura Gunaratne",
+    id: "j-10",
+    name: "Joiner 10",
     designation: "Senior Software Engineer",
     team: "Micro Integrator Team in the Product Engineering BU",
     location: "Sri Lanka",
@@ -268,16 +270,16 @@ export const RECENT_JOINERS: Joiner[] = [
 ];
 
 export const PROMOTION_NOMINEES = [
-  { name: "Chanuka Karunanayake", track: "Snr → Lead · Product", pill: { label: "On track", tone: "ok" as const } },
-  { name: "Nadun Rathnayake", track: "Snr → Lead · Engineering", pill: { label: "Draft", tone: "watch" as const } },
-  { name: "Priyanka Silva", track: "Assoc → Snr · Support", pill: { label: "On track", tone: "ok" as const } },
-  { name: "Kavindu Weerasinghe", track: "Snr → Lead · Design", pill: { label: "Nomination overdue", tone: "crit" as const } },
-  { name: "Roshan Bandara", track: "Assoc → Snr · QE", pill: { label: "Nomination overdue", tone: "crit" as const } },
+  { name: "Nominee 1", track: "Snr → Lead · Product", pill: { label: "On track", tone: "ok" as const } },
+  { name: "Nominee 2", track: "Snr → Lead · Engineering", pill: { label: "Draft", tone: "watch" as const } },
+  { name: "Nominee 3", track: "Assoc → Snr · Support", pill: { label: "On track", tone: "ok" as const } },
+  { name: "Nominee 4", track: "Snr → Lead · Design", pill: { label: "Nomination overdue", tone: "crit" as const } },
+  { name: "Nominee 5", track: "Assoc → Snr · QE", pill: { label: "Nomination overdue", tone: "crit" as const } },
 ];
 
 export const CAFETERIA_MENU = [
-  { icon: "🥣", meal: "Breakfast", items: "Milk rice · pol sambol · dhal · seeni sambol" },
-  { icon: "🥐", meal: "Morning snack", items: "Fish rolls · malu paan · tea & coffee" },
-  { icon: "🍛", meal: "Lunch", items: "Rice & curry · chicken · dhal · mallum · papadam" },
-  { icon: "🫖", meal: "Evening snack", items: "Vadai · cutlets · tea" },
+  { icon: "🥣", meal: "Breakfast", items: "Main · side · protein · fruit" },
+  { icon: "🥐", meal: "Morning snack", items: "Pastry · savoury bite · tea & coffee" },
+  { icon: "🍛", meal: "Lunch", items: "Rice · curry · protein · vegetable · condiment" },
+  { icon: "🫖", meal: "Evening snack", items: "Savoury bite · fritters · tea" },
 ];
