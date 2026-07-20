@@ -15,9 +15,9 @@
 // under the License.
 
 import { useEffect } from "react";
-import { Box, IconButton, Stack, Typography } from "@wso2/oxygen-ui";
+import { Box, IconButton, Stack, Typography, Avatar } from "@wso2/oxygen-ui";
 import { useThemeMode } from "@context/theme-mode/ThemeModeContext";
-import UserProfileMenu from "./UserProfileMenu";
+import { useAsgardeoUser } from "@hooks/useAsgardeoUser";
 
 interface TopBarProps {
   onOpenWaffle: () => void;
@@ -30,6 +30,7 @@ interface TopBarProps {
 // it (wired here so it's available on every page).
 export default function TopBar({ onOpenWaffle, onOpenAsk }: TopBarProps) {
   const { mode, toggle } = useThemeMode();
+  const user = useAsgardeoUser();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -161,7 +162,12 @@ export default function TopBar({ onOpenWaffle, onOpenAsk }: TopBarProps) {
             <path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z" />
           </svg>
         </IconButton>
-        <UserProfileMenu />
+        <Avatar
+          title={user.displayName ?? user.email ?? "Signed in"}
+          sx={{ width: 32, height: 32, fontSize: 12, fontWeight: 600 }}
+        >
+          {user.initials || (user.ready ? "?" : "")}
+        </Avatar>
       </Stack>
     </Box>
   );

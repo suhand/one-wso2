@@ -8,10 +8,6 @@ window.config = {
   ONE_WSO2_AUTH_CLIENT_ID: "<your-client-id>",
   ONE_WSO2_AUTH_SIGN_IN_REDIRECT_URL: "http://localhost:3000",
   ONE_WSO2_AUTH_SIGN_OUT_REDIRECT_URL: "http://localhost:3000",
-  // Optional override — only needed for non-standard Asgardeo deployments.
-  // Defaults to the ONE_WSO2_AUTH_BASE_URL with the api. subdomain swapped
-  // for myaccount. (Asgardeo Cloud convention).
-  // ONE_WSO2_ASGARDEO_MYACCOUNT_URL: "https://myaccount.asgardeo.io/t/<your-org>",
 
   // UI
   ONE_WSO2_THEME: "acrylicOrange",

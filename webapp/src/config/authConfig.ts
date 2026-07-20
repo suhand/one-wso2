@@ -32,12 +32,6 @@ declare global {
       // My profile page. Optional — when absent, the My page still loads
       // but the profile sections show a "not configured" state.
       ONE_WSO2_PEOPLE_BACKEND_URL?: string;
-      // Override for the Asgardeo My Account portal URL that the top-bar
-      // "Profile" menu item opens. Only set this on non-standard tenants
-      // (self-hosted / custom domain); on Asgardeo Cloud we derive it from
-      // ONE_WSO2_AUTH_BASE_URL by swapping the api. subdomain for
-      // myaccount. (e.g. api.asgardeo.io/t/wso2 → myaccount.asgardeo.io/t/wso2).
-      ONE_WSO2_ASGARDEO_MYACCOUNT_URL?: string;
       // Dev-only escape hatch — when true AND the bundle is a Vite dev
       // build, AuthGuard treats the user as signed in without ever calling
       // Asgardeo. Ignored in production builds (see devBypassAuth below),
@@ -64,24 +58,11 @@ function readConfig(key: keyof Window["config"], fallback = ""): string {
   );
 }
 
-const baseUrl = readConfig("ONE_WSO2_AUTH_BASE_URL", "https://dev.local/asgardeo");
-
-// Derive Asgardeo's hosted My Account portal URL from the tenant base URL.
-// Standard Asgardeo Cloud shape: api.asgardeo.io/t/<tenant> → myaccount.asgardeo.io/t/<tenant>.
-// Operators can override via ONE_WSO2_ASGARDEO_MYACCOUNT_URL for non-standard deployments.
-function deriveMyAccountUrl(base: string): string {
-  const override = window.config?.ONE_WSO2_ASGARDEO_MYACCOUNT_URL;
-  if (typeof override === "string" && override) return override;
-  return base.replace(/(^https?:\/\/)api\./, "$1myaccount.");
-}
-
 export const authConfig = {
-  baseUrl,
+  baseUrl: readConfig("ONE_WSO2_AUTH_BASE_URL", "https://dev.local/asgardeo"),
   clientId: readConfig("ONE_WSO2_AUTH_CLIENT_ID", "dev-mode-client"),
   afterSignInUrl: readConfig("ONE_WSO2_AUTH_SIGN_IN_REDIRECT_URL", "http://localhost:3000"),
   afterSignOutUrl: readConfig("ONE_WSO2_AUTH_SIGN_OUT_REDIRECT_URL", "http://localhost:3000"),
-  // Asgardeo's hosted My Account portal — opened from the top-bar profile menu.
-  myAccountUrl: deriveMyAccountUrl(baseUrl),
   // Same scope set as Novera and the leave/menu backends — groups is
   // required for role-based checks in downstream experience APIs.
   scopes: ["openid", "email", "groups", "profile"] as const,
