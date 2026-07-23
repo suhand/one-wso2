@@ -56,11 +56,18 @@ export default function ProfileHero({
         alignItems: "center",
         gap: 2.25,
         overflow: "hidden",
+        // Use the palette CSS var directly, not t.palette.primary.light —
+        // under CssVarsProvider the callback resolves that to the light
+        // scheme's pastel pink (#FDEDE8) at theme construction, so in
+        // dark mode the gradient painted a washed-out sunset over dark
+        // paper. Referencing the CSS var lets the gradient adapt to the
+        // active color scheme (light-mode = pastel pink, dark-mode =
+        // 18%-opacity orange over #141417).
         "&::before": {
           content: '""',
           position: "absolute",
           inset: 0,
-          background: (t) => `linear-gradient(120deg, ${t.palette.primary.light} 0%, transparent 55%)`,
+          background: "linear-gradient(120deg, var(--oxygen-palette-primary-light) 0%, transparent 55%)",
           pointerEvents: "none",
         },
       }}
