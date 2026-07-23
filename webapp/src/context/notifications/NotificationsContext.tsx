@@ -76,18 +76,28 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const showSuccess = useMemo(() => enqueue("success"), [enqueue]);
   const showError = useMemo(() => enqueue("error"), [enqueue]);
 
-  const dismiss = useCallback(() => {
-    setQueue((q) => q.slice(1));
+  // `expectedKey` prevents a stale close callback — a manual X-click on
+  // an earlier banner racing an error preemption, or an auto-dismiss
+  // timer that fired between the head rotating and its cleanup — from
+  // silently shifting the queue and dropping the CURRENT head. Passing
+  // no key falls back to the old "always shift" behaviour, which no
+  // caller uses today but keeps the API forgiving.
+  const dismiss = useCallback((expectedKey?: number) => {
+    setQueue((q) =>
+      expectedKey === undefined || q[0]?.key === expectedKey ? q.slice(1) : q,
+    );
   }, []);
 
   const head = queue[0];
 
   useEffect(() => {
     if (!head) return;
-    const t = setTimeout(dismiss, AUTO_DISMISS_MS);
+    // Capture the head key at the moment we schedule the timer so a
+    // preemption that changes the head between now and 3.5s later
+    // doesn't pop the new head instead.
+    const key = head.key;
+    const t = setTimeout(() => dismiss(key), AUTO_DISMISS_MS);
     return () => clearTimeout(t);
-    // Depend on the current head's key so the timer resets when the head
-    // rotates or is preempted.
   }, [head?.key, dismiss]);
 
   const value = useMemo(() => ({ showSuccess, showError }), [showSuccess, showError]);
@@ -99,7 +109,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         <NotificationBanner
           severity={head.severity}
           message={head.message}
-          onClose={dismiss}
+          onClose={() => dismiss(head.key)}
         />
       )}
     </NotificationsContext.Provider>

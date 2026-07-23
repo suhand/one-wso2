@@ -170,14 +170,31 @@ function describeLeadDeadline(deadline: string | undefined | null): string {
 // Read a `YYYY-MM-DD[Thh:mm...]` string as a LOCAL calendar day. Returning
 // a Date at local midnight for that day lets diff math against
 // startOfDay(new Date()) stay on the intended day boundary in every
-// timezone. Returns null if the input isn't a recognisable ISO date.
+// timezone. Returns null if the input isn't a recognisable ISO date, or
+// if the components describe an impossible calendar day (e.g. Feb 31 —
+// `new Date(2026, 1, 31)` silently normalises to March 3 and would
+// otherwise be rendered as if it were a valid deadline).
 function parseLocalDateOnly(input: string | undefined | null): Date | null {
   if (!input) return null;
   const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(input);
   if (!match) return null;
   const [, y, m, d] = match;
-  const date = new Date(Number(y), Number(m) - 1, Number(d));
-  return Number.isNaN(date.getTime()) ? null : date;
+  const year = Number(y);
+  const month = Number(m);
+  const day = Number(d);
+  const date = new Date(year, month - 1, day);
+  // Round-trip: if the Date constructor had to normalise an overflowed
+  // component the getters won't match what we parsed — reject as
+  // malformed rather than silently returning a different date.
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+  return date;
 }
 
 function startOfDay(d: Date): Date {
