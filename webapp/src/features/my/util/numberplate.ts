@@ -65,9 +65,11 @@ export function validatePlate(input: string): Validity {
 
 // Normalizes user input to the canonical backend format (single space
 // separator, uppercase). "CAA-1111" → "CAA 1111"; "aaa1234" → "AAA 1234";
-// "123SRI4567" → "123 4567". If no pattern matches, returns the
+// "123SRI4567" → "123 SRI 4567" (SRI-format plates preserve the SRI token
+// — earlier versions of this helper stripped it silently, which saved a
+// semantically different plate). If no pattern matches, returns the
 // uppercased/collapsed input as-is so the backend rejects it (rather than
-// us silently mangling it).
+// us mangling it further).
 export function formatPlate(input: string): string {
   const normalized = input.trim().toUpperCase().replace(/[- ]+/g, " ");
   const parts = normalized.split(" ");
@@ -76,13 +78,12 @@ export function formatPlate(input: string): string {
     normalized.match(/^(\d{1,3})\s*SRI\s*(\d{4})$/) ||
     normalized.match(/^(\d{1,3})SRI(\d{4})$/) ||
     normalized.match(/^(\d{1,3})[- ]?SRI[- ]?(\d{4})$/i);
-  if (sriMatch) return `${sriMatch[1]} ${sriMatch[2]}`;
+  if (sriMatch) return `${sriMatch[1]} SRI ${sriMatch[2]}`;
 
   if (/^[A-Z]{2,3}\d{4}$/.test(normalized))
     return `${normalized.slice(0, -4)} ${normalized.slice(-4)}`;
 
   if (/^\d{2} \d{4}$/.test(normalized)) return normalized;
-  if (/^\d{1,3} SRI \d{4}$/.test(normalized)) return normalized;
 
   const alphaNumMatch = normalized.match(/^([A-Z]{2,3})(\d{4})$/);
   if (alphaNumMatch) return `${alphaNumMatch[1]} ${alphaNumMatch[2]}`;

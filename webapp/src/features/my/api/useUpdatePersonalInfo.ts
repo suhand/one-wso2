@@ -20,9 +20,15 @@ import { authedPatch } from "@api/http";
 import { peopleServiceUrls } from "@config/apiConfig";
 import type { UpdatePersonalInfoPayload } from "./types";
 
-// PATCH /employees/{employeeId}/personal-info. On success, invalidates the
-// entire me-profile query family so the parent refetches — the returned
-// data becomes the new "initial" snapshot for dirty-tracking.
+// PATCH /employees/{employeeId}/personal-info. On success, awaits the
+// me-profile refetch so the parent re-renders with fresh data BEFORE
+// per-call onSuccess handlers flip editing off — without the await,
+// PersonalInfo / EmergencyContacts briefly re-seeded their form from
+// the stale `initial` snapshot, flashing pre-save values in read mode.
+//
+// Also invalidates ["user-info"] — safe today (nothing this payload
+// writes overlaps with UserProfileMenu's display fields) and a cheap
+// hedge against a future extension adding e.g. a thumbnail upload.
 export function useUpdatePersonalInfo(employeeId: string | undefined) {
   const { getIdToken } = useAsgardeo();
   const qc = useQueryClient();
@@ -37,8 +43,14 @@ export function useUpdatePersonalInfo(employeeId: string | undefined) {
         payload,
       );
     },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["me-profile"] });
+    onSuccess: async () => {
+      // React Query awaits Promise-returning onSuccess handlers before
+      // firing per-call ones. Both invalidations run in parallel; both
+      // must resolve before the caller thinks the save is "done".
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["me-profile"] }),
+        qc.invalidateQueries({ queryKey: ["user-info"] }),
+      ]);
     },
   });
 }

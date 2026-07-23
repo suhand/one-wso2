@@ -145,7 +145,13 @@ function HistoryRow({ entry }: { entry: PromotionHistoryEntry }) {
         </Typography>
       )}
       <Typography sx={{ fontSize: 11.5, color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
-        Effective {formatDate(entry.updatedOn)}
+        {/* Backend surfaces createdOn (application creation) and
+            updatedOn (last mutation of the row). updatedOn can shift
+            when an admin edits the request post-approval, so we label
+            it "Last updated" — an honest match for what the field
+            actually is. A dedicated effective-date field would be
+            better once the backend exposes one. */}
+        Last updated {formatDate(entry.updatedOn)}
       </Typography>
     </Box>
   );

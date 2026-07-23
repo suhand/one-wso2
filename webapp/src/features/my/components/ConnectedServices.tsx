@@ -63,7 +63,7 @@ export default function ConnectedServices() {
                 configured={promotionConfigured}
                 isLoading={promotionInfo.isLoading}
                 isError={promotionInfo.isError}
-                date={promotionInfo.data?.employeeInfo.lastPromotedDate ?? null}
+                date={promotionInfo.data?.employeeInfo?.lastPromotedDate ?? null}
               />
             </Box>
             <Tooltip

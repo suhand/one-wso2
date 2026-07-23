@@ -39,6 +39,24 @@ import Pager from "@features/people-ops/components/Pager";
 // paging. No max-contacts cap — the backend has none.
 const READ_PAGE_SIZE = 2;
 
+// Client-side row wrapper. Because the backend's EmergencyContact has no
+// stable identifier, we assign a synthetic `_id` at normalize / addContact
+// time so React can key rows by identity — not by array index. Keying by
+// index was breaking focus/IME composition every time a middle row was
+// deleted (the surviving row inherited the removed row's DOM node).
+// The `_id` is stripped from the payload before it ships to the backend.
+interface EmergencyContactRow extends EmergencyContact {
+  _id: string;
+}
+
+// Monotonic client-side row id. Only used as a React key; never persisted,
+// never sent to the backend.
+let _rowIdCounter = 0;
+function nextRowId(): string {
+  _rowIdCounter += 1;
+  return `ec-${_rowIdCounter}`;
+}
+
 // Emergency contacts card. Uses the same backend endpoint as PersonalInfo
 // (PATCH /employees/{id}/personal-info) but only sends the emergencyContacts
 // field. Backend replaces the whole array atomically, so a Save here rewrites
@@ -52,8 +70,8 @@ export default function EmergencyContacts({
   employeeId?: string;
   isLoading?: boolean;
 }) {
-  const initial = useMemo<EmergencyContact[]>(() => normalize(contacts), [contacts]);
-  const [form, setForm] = useState<EmergencyContact[]>(initial);
+  const initial = useMemo<EmergencyContactRow[]>(() => normalize(contacts), [contacts]);
+  const [form, setForm] = useState<EmergencyContactRow[]>(initial);
   const [editing, setEditing] = useState(false);
   const [page, setPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -76,12 +94,15 @@ export default function EmergencyContacts({
     );
   }
 
-  const isDirty = JSON.stringify(form) !== JSON.stringify(initial);
-  const badRow = form.find((c) => !c.name.trim() || !c.relationship.trim() || !c.mobile.trim());
-  // Validate only when the array will actually be sent — pre-existing bad
-  // data on the backend shouldn't block a save the user hasn't touched.
+  // Compare only the persisted fields; the client-side `_id` is
+  // irrelevant to dirty-tracking and would otherwise register a false
+  // change when the user reorders rows.
+  const isDirty =
+    JSON.stringify(form.map(stripId)) !== JSON.stringify(initial.map(stripId));
+  const badRow = form.find(rowIsIncomplete);
   const hasValidationError = isDirty && Boolean(badRow);
-  const canSave = editing && isDirty && !hasValidationError && !mutation.isPending && Boolean(employeeId);
+  const canSave =
+    editing && isDirty && !hasValidationError && !mutation.isPending && Boolean(employeeId);
 
   const enterEdit = () => {
     setForm(initial);
@@ -126,7 +147,15 @@ export default function EmergencyContacts({
     : form.slice(clampedPage * READ_PAGE_SIZE, (clampedPage + 1) * READ_PAGE_SIZE);
 
   const addContact = () =>
-    setForm((f) => [...f, { name: "", relationship: "", telephone: null, mobile: "" }]);
+    setForm((f) => [
+      ...f,
+      { _id: nextRowId(), name: "", relationship: "", telephone: null, mobile: "" },
+    ]);
+
+  // Show per-field red border on required-and-empty fields as soon as the
+  // form is dirty — so when Save disables, the user can see *which*
+  // fields need attention (previously they only saw a greyed-out button).
+  const showRowErrors = isDirty;
 
   return (
     <Card variant="outlined" sx={{ p: 2, position: "relative" }}>
@@ -167,23 +196,26 @@ export default function EmergencyContacts({
 
       {form.length === 0 ? (
         <Typography sx={{ fontSize: 12.5, color: "text.disabled", py: 1.25 }}>
-          {editing ? "No emergency contacts yet — click Add contact to add one." : "No emergency contacts on file."}
+          {editing
+            ? "No emergency contacts yet — click Add contact to add one."
+            : "No emergency contacts on file."}
         </Typography>
       ) : editing ? (
         visible.map((c, idx) => (
           <EditRow
-            key={idx}
+            key={c._id}
             contact={c}
+            showErrors={showRowErrors}
             onChange={(updated) =>
-              setForm((f) => f.map((x, i) => (i === idx ? updated : x)))
+              setForm((f) => f.map((x) => (x._id === c._id ? { ...updated, _id: c._id } : x)))
             }
-            onRemove={() => setForm((f) => f.filter((_, i) => i !== idx))}
+            onRemove={() => setForm((f) => f.filter((x) => x._id !== c._id))}
             last={idx === visible.length - 1}
           />
         ))
       ) : (
         visible.map((c, idx) => (
-          <ReadRow key={idx} contact={c} last={idx === visible.length - 1} />
+          <ReadRow key={c._id} contact={c} last={idx === visible.length - 1} />
         ))
       )}
 
@@ -209,9 +241,9 @@ export default function EmergencyContacts({
 
       {editing && (
         <>
-          {error && (
-            <Alert severity="error" sx={{ mt: 2, fontSize: 12.5 }}>
-              {error}
+          {(error || (isDirty && badRow)) && (
+            <Alert severity={error ? "error" : "warning"} sx={{ mt: 2, fontSize: 12.5 }}>
+              {error ?? "Fill in every required field (name, relationship, mobile) to save."}
             </Alert>
           )}
           <Stack
@@ -235,13 +267,24 @@ export default function EmergencyContacts({
 
 // ---- helpers ---------------------------------------------------------------
 
-function normalize(contacts?: EmergencyContact[]): EmergencyContact[] {
+function normalize(contacts?: EmergencyContact[]): EmergencyContactRow[] {
   return (contacts ?? []).map((c) => ({
+    _id: nextRowId(),
     name: c.name ?? "",
     relationship: c.relationship ?? "",
     telephone: c.telephone ?? null,
     mobile: c.mobile ?? "",
   }));
+}
+
+function stripId(r: EmergencyContactRow): EmergencyContact {
+  const { _id, ...rest } = r;
+  void _id;
+  return rest;
+}
+
+function rowIsIncomplete(c: EmergencyContact): boolean {
+  return !c.name.trim() || !c.relationship.trim() || !c.mobile.trim();
 }
 
 function readableError(err: Error): string {
@@ -321,12 +364,21 @@ function EditRow({
   onChange,
   onRemove,
   last,
+  showErrors,
 }: {
-  contact: EmergencyContact;
-  onChange: (updated: EmergencyContact) => void;
+  contact: EmergencyContactRow;
+  onChange: (updated: EmergencyContactRow) => void;
   onRemove: () => void;
   last: boolean;
+  showErrors: boolean;
 }) {
+  // Only render the red-error state once the user has made changes AND
+  // the required field is empty. Suppresses noise on rows that are
+  // brand-new-and-untouched, but still calls out required-and-cleared.
+  const nameError = showErrors && !contact.name.trim();
+  const relError = showErrors && !contact.relationship.trim();
+  const mobileError = showErrors && !contact.mobile.trim();
+
   return (
     <Box
       sx={{
@@ -344,12 +396,14 @@ function EditRow({
         value={contact.name}
         onChange={(e) => onChange({ ...contact, name: e.target.value })}
         placeholder="Full name"
+        error={nameError}
       />
       <TextField
         size="small"
         value={contact.relationship}
         onChange={(e) => onChange({ ...contact, relationship: e.target.value })}
         placeholder="e.g. Spouse"
+        error={relError}
       />
       <TextField
         size="small"
@@ -361,6 +415,7 @@ function EditRow({
         size="small"
         value={contact.mobile}
         onChange={(e) => onChange({ ...contact, mobile: e.target.value })}
+        error={mobileError}
       />
       <IconButton
         size="small"
@@ -382,7 +437,7 @@ function EditRow({
   );
 }
 
-function ReadRow({ contact, last }: { contact: EmergencyContact; last: boolean }) {
+function ReadRow({ contact, last }: { contact: EmergencyContactRow; last: boolean }) {
   return (
     <Box
       sx={{

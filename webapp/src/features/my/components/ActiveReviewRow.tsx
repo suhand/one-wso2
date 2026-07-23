@@ -88,8 +88,19 @@ export default function ActiveReviewRow({ workEmail }: { workEmail?: string }) {
     );
   }
 
+  // rating error MUST render distinctly from "Not started". Otherwise a
+  // 401 / 5xx / stale-token failure silently maps to the friendly
+  // no-record-yet chip and the user has no way to tell backend is broken.
   const submissionChip = ratingQuery.isLoading ? (
     <Skeleton variant="rectangular" width={72} height={20} sx={{ borderRadius: 10 }} />
+  ) : ratingQuery.isError ? (
+    <Chip
+      label="Unknown"
+      size="small"
+      color="error"
+      variant="outlined"
+      sx={{ ml: 0.75, height: 20, fontSize: 11, fontWeight: 600 }}
+    />
   ) : (
     <SubmissionChip status={ratingQuery.data?.parEmployeeStatus} />
   );
@@ -98,7 +109,9 @@ export default function ActiveReviewRow({ workEmail }: { workEmail?: string }) {
     <>
       {cycle.parCycleName} Review {submissionChip}
     </>,
-    describeLeadDeadline(cycle.parLeadDeadline),
+    ratingQuery.isError
+      ? "Couldn't load your rating status."
+      : describeLeadDeadline(cycle.parLeadDeadline),
   );
 }
 
@@ -139,20 +152,32 @@ function mapEmployeeStatus(status?: ParEmployeeStatus): {
 }
 
 // Turns an ISO date into "Lead's PAR submission deadline in N days" /
-// "today" / "passed" / "closed". Days computed against the local day
-// boundary — good enough for a one-line hint; the par-app itself has
-// timezone-aware notifications.
+// "today" / "passed". Parses `YYYY-MM-DD` explicitly in the LOCAL calendar
+// so a Ballerina date-only field lands on the day the backend meant,
+// not the previous day for users west of UTC (new Date("YYYY-MM-DD")
+// parses as UTC midnight per the spec).
 function describeLeadDeadline(deadline: string | undefined | null): string {
-  if (!deadline) return "Lead's PAR submission deadline: n/a";
-  const target = new Date(deadline);
-  if (Number.isNaN(target.getTime())) return "Lead's PAR submission deadline: n/a";
+  const targetDay = parseLocalDateOnly(deadline);
+  if (!targetDay) return "Lead's PAR submission deadline: n/a";
   const today = startOfDay(new Date());
-  const targetDay = startOfDay(target);
   const diffDays = Math.round((targetDay.getTime() - today.getTime()) / 86_400_000);
   if (diffDays > 1) return `Lead's PAR submission deadline in ${diffDays} days`;
   if (diffDays === 1) return "Lead's PAR submission deadline tomorrow";
   if (diffDays === 0) return "Lead's PAR submission deadline today";
   return "Lead's PAR submission deadline passed";
+}
+
+// Read a `YYYY-MM-DD[Thh:mm...]` string as a LOCAL calendar day. Returning
+// a Date at local midnight for that day lets diff math against
+// startOfDay(new Date()) stay on the intended day boundary in every
+// timezone. Returns null if the input isn't a recognisable ISO date.
+function parseLocalDateOnly(input: string | undefined | null): Date | null {
+  if (!input) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(input);
+  if (!match) return null;
+  const [, y, m, d] = match;
+  const date = new Date(Number(y), Number(m) - 1, Number(d));
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function startOfDay(d: Date): Date {

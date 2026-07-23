@@ -25,11 +25,15 @@ import {
 } from "react";
 import NotificationBanner, { type NotificationSeverity } from "./NotificationBanner";
 
-// Global success/error banner. Same shape as cs-tools/apps/customer-portal's
-// SuccessBanner + ErrorBanner contexts, folded into one provider so a single
-// slot on screen shows whichever kind of notification fires last. Auto-
-// dismisses on a fixed timeout; passing a fresh message while one is
-// visible restarts the timer.
+// Global success/error banner with a proper FIFO queue. Same shape as
+// cs-tools/apps/customer-portal's SuccessBanner + ErrorBanner contexts,
+// folded into one provider — but earlier revisions used a single-slot
+// state that silently dropped an earlier notification when two calls
+// landed in the same tick (e.g. a mutation onSuccess and a background
+// query error). We now queue; the head renders until it auto-dismisses,
+// then the next one takes over. Errors are prioritized: showError
+// preempts an active success banner so a critical error can't be
+// masked by a trivial success toast.
 
 const AUTO_DISMISS_MS = 3500;
 
@@ -41,47 +45,60 @@ interface NotificationsContextValue {
 interface Notification {
   severity: NotificationSeverity;
   message: string;
-  // Bumped every showSuccess/showError call so the timer effect resets even
-  // when the message string is identical to the previous one.
+  // Monotonically increasing so React sees a fresh key when the same
+  // message is enqueued twice — restarts the auto-dismiss timer visibly.
   key: number;
 }
 
 const NotificationsContext = createContext<NotificationsContextValue | undefined>(undefined);
 
 export function NotificationsProvider({ children }: { children: ReactNode }) {
-  const [notification, setNotification] = useState<Notification | null>(null);
+  const [queue, setQueue] = useState<Notification[]>([]);
 
-  const push = useCallback(
+  const enqueue = useCallback(
     (severity: NotificationSeverity) => (message: string) => {
-      setNotification((prev) => ({
-        severity,
-        message,
-        key: (prev?.key ?? 0) + 1,
-      }));
+      setQueue((q) => {
+        // Errors preempt an active success banner (but not an active
+        // error — an error is worth reading in full before the next
+        // one). Non-error notifications always append.
+        if (severity === "error" && q.length > 0 && q[0].severity === "success") {
+          return [
+            { severity, message, key: nextKey() },
+            ...q.slice(1),
+          ];
+        }
+        return [...q, { severity, message, key: nextKey() }];
+      });
     },
     [],
   );
 
-  const showSuccess = useMemo(() => push("success"), [push]);
-  const showError = useMemo(() => push("error"), [push]);
+  const showSuccess = useMemo(() => enqueue("success"), [enqueue]);
+  const showError = useMemo(() => enqueue("error"), [enqueue]);
 
-  const dismiss = useCallback(() => setNotification(null), []);
+  const dismiss = useCallback(() => {
+    setQueue((q) => q.slice(1));
+  }, []);
+
+  const head = queue[0];
 
   useEffect(() => {
-    if (!notification) return;
+    if (!head) return;
     const t = setTimeout(dismiss, AUTO_DISMISS_MS);
     return () => clearTimeout(t);
-  }, [notification, dismiss]);
+    // Depend on the current head's key so the timer resets when the head
+    // rotates or is preempted.
+  }, [head?.key, dismiss]);
 
   const value = useMemo(() => ({ showSuccess, showError }), [showSuccess, showError]);
 
   return (
     <NotificationsContext.Provider value={value}>
       {children}
-      {notification && (
+      {head && (
         <NotificationBanner
-          severity={notification.severity}
-          message={notification.message}
+          severity={head.severity}
+          message={head.message}
           onClose={dismiss}
         />
       )}
@@ -93,4 +110,11 @@ export function useNotifications() {
   const ctx = useContext(NotificationsContext);
   if (!ctx) throw new Error("useNotifications must be used within NotificationsProvider");
   return ctx;
+}
+
+// Module-scoped counter so keys don't collide across enqueue closures.
+let _keyCounter = 0;
+function nextKey(): number {
+  _keyCounter += 1;
+  return _keyCounter;
 }
