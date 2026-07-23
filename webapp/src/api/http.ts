@@ -50,9 +50,16 @@ export class HttpError extends Error {
 //
 // No Content-Type header on GET: with no body the header is meaningless
 // and makes the request non-simple, forcing an unnecessary CORS preflight.
-export async function authedGet<T>(url: string, idToken: string): Promise<T> {
+// `extraHeaders` lets specific callers (e.g. promotion-app, which requires
+// `x-user-timezone-offset`) add per-backend quirks without polluting the
+// core helper.
+export async function authedGet<T>(
+  url: string,
+  idToken: string,
+  extraHeaders?: Record<string, string>,
+): Promise<T> {
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${idToken}` },
+    headers: { Authorization: `Bearer ${idToken}`, ...(extraHeaders ?? {}) },
   });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
@@ -63,4 +70,65 @@ export async function authedGet<T>(url: string, idToken: string): Promise<T> {
     throw new HttpError(url, res.status, body);
   }
   return res.json() as Promise<T>;
+}
+
+// Authed POST with a JSON body. Returns parsed JSON when the response has
+// a body, or null on 201/204. Same error semantics as authedGet.
+export async function authedPost<T>(url: string, idToken: string, body: unknown): Promise<T | null> {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    if (import.meta.env.DEV && text) {
+      console.warn(`[authedPost] ${url} → HTTP ${res.status}: ${text.slice(0, 400)}`);
+    }
+    throw new HttpError(url, res.status, text);
+  }
+  if (res.status === 204 || res.headers.get("content-length") === "0") return null;
+  const text = await res.text();
+  return text ? (JSON.parse(text) as T) : null;
+}
+
+// Authed PATCH with a JSON body. Returns parsed JSON when the response has
+// a body, or null on 204. Same error semantics as authedPost.
+export async function authedPatch<T>(url: string, idToken: string, body: unknown): Promise<T | null> {
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    if (import.meta.env.DEV && text) {
+      console.warn(`[authedPatch] ${url} → HTTP ${res.status}: ${text.slice(0, 400)}`);
+    }
+    throw new HttpError(url, res.status, text);
+  }
+  if (res.status === 204 || res.headers.get("content-length") === "0") return null;
+  const text = await res.text();
+  return text ? (JSON.parse(text) as T) : null;
+}
+
+// Authed DELETE. Returns null; throws HttpError on non-2xx.
+export async function authedDelete(url: string, idToken: string): Promise<void> {
+  const res = await fetch(url, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    if (import.meta.env.DEV && body) {
+      console.warn(`[authedDelete] ${url} → HTTP ${res.status}: ${body.slice(0, 400)}`);
+    }
+    throw new HttpError(url, res.status, body);
+  }
 }
