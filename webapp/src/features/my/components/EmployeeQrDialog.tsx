@@ -61,6 +61,11 @@ export default function EmployeeQrDialog({
       return;
     }
     let cancelled = false;
+    // AbortController actually cancels the in-flight request when the
+    // dialog closes mid-fetch — `cancelled` alone only suppresses the
+    // state update on the next tick; a hung backend would still keep
+    // the connection open until it timed out.
+    const controller = new AbortController();
     setStatus("loading");
     setError(null);
     (async () => {
@@ -69,6 +74,7 @@ export default function EmployeeQrDialog({
         if (!idToken) throw new Error("No id_token available from Asgardeo");
         const res = await fetch(peopleServiceUrls.employeeQrCode(employeeId), {
           headers: { Authorization: `Bearer ${idToken}` },
+          signal: controller.signal,
         });
         if (!res.ok) {
           const text = await res.text().catch(() => "");
@@ -80,12 +86,17 @@ export default function EmployeeQrDialog({
         setStatus("success");
       } catch (e) {
         if (cancelled) return;
+        // A user-initiated abort (dialog closed while fetch was in
+        // flight) shows up as a DOMException / AbortError — don't
+        // surface it as a red error, the component is already gone.
+        if (e instanceof DOMException && e.name === "AbortError") return;
         setError(readableError(e));
         setStatus("error");
       }
     })();
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [open, employeeId, getIdToken]);
 

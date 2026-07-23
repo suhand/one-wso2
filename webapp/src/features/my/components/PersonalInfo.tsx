@@ -253,7 +253,7 @@ function validate(f: FormState): ValidationErrors {
   if (f.personalPhone.trim() && !PHONE_RE.test(f.personalPhone.trim()))
     errors.personalPhone = "Enter a valid phone number";
   if (f.residentNumber.trim() && !PHONE_RE.test(f.residentNumber.trim()))
-    errors.residentNumber = "Enter a valid phone number";
+    errors.residentNumber = "Enter a valid resident number";
   return errors;
 }
 
